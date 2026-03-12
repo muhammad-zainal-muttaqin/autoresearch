@@ -5,3 +5,4 @@ commit	val_map50	val_map50_95	precision	recall	memory_gb	status	description
 7004205	0.532438	0.251807	0.472767	0.630401	10.0	keep	baseline rerun yolov9c 640 b16
 ef0aeb4	0.546201	0.257748	0.495847	0.633171	10.0	keep	cos lr
 03d0f7c	0.000000	0.000000	0.000000	0.000000	0.0	crash	patience 30 cuda unavailable
+4f1533b	0.536483	0.251003	0.484858	0.628694	10.0	discard	patience 30
