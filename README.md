@@ -21,13 +21,13 @@ train.py                editable experiment surface
 prepare.py              dataset constants, verification, evaluation
 program.md              agent instructions and experiment protocol
 pyproject.toml          Python dependencies
-Dataset-YOLO/
+Dataset-YOLO/           canonical local split (gitignored)
   data.yaml             dataset config
   images/{train,val,test}
   labels/{train,val,test}
 ```
 
-Generated training outputs are written under the repository's own `runs/` directory and should not be committed.
+Datasets and generated training outputs are local-only artifacts and should not be committed.
 
 ## Requirements
 
@@ -59,6 +59,8 @@ $env:YOLO_DATASET_DIR = "D:\datasets\Dataset-YOLO"
 uv run prepare.py
 uv run train.py
 ```
+
+The canonical dataset split used by this repository currently contains `2,764` train images, `604` validation images, and `624` test images.
 
 ## Files You Should and Should Not Edit
 
@@ -101,6 +103,8 @@ Dataset-YOLO/
 ```
 
 `prepare.py` validates that each split has both image and label directories before training starts.
+
+If you mirror the dataset from another source, treat it as equivalent to `Dataset-YOLO` only when the split membership matches the canonical local split, not just the class names or total image count.
 
 ## Autonomous Experimentation
 
