@@ -47,7 +47,8 @@ This repository must stay portable across local machines, RunPod, and other clou
 - If the dataset is not inside the repo, use `YOLO_DATASET_DIR` in the shell environment for that session only. Relative values are resolved from the repository root.
 - Never hardcode machine-specific prefixes such as `C:\...`, `/workspace/...`, `/runpod-volume/...`, or user home directories into the code.
 - Training artifacts belong under the repo-local `runs/` directory.
-- `results.tsv` stays local and untracked.
+- `results.tsv` and `progress.png` are tracked experiment telemetry.
+- Raw logs such as `baseline.log`, `followup.log`, and `run.log` stay local and untracked.
 
 ## Output Contract
 
@@ -71,6 +72,7 @@ Parse those values from the log or terminal output. Do not rely on Unix-only too
 ## Logging Results
 
 After every experiment, append exactly one row to `results.tsv`.
+After every new row, regenerate `progress.png` from the current `results.tsv`.
 
 Columns:
 
@@ -95,7 +97,8 @@ Rules:
 - Convert `peak_vram_mb` to `memory_gb`.
 - Use `0.000000` and `0.0` for crashed runs.
 - Keep descriptions short and specific.
-- Never commit `results.tsv`.
+- Never commit raw logs.
+- Commit and push `results.tsv` and `progress.png` after every completed iteration so progress survives pod loss.
 
 ## The Experiment Loop
 
@@ -106,10 +109,11 @@ Repeat this loop until the human stops you:
 3. Commit the change with a short experiment message such as `exp: imgsz 800`.
 4. Run `uv run train.py` and capture the output to `run.log` if possible.
 5. Parse the summary block.
-6. If the run crashed, inspect the traceback, log a `crash` row, make the simplest reasonable fix, and continue.
-7. If `val_map50_95` improved, keep the commit and log `keep`.
-8. If `val_map50_95` did not improve, log `discard` and return the branch to the previous kept state.
-9. Move on to the next hypothesis immediately.
+6. If the run crashed, inspect the traceback, log a `crash` row, restore the previous kept code state, regenerate `progress.png`, commit the telemetry snapshot, push it, then make the simplest reasonable fix before continuing.
+7. If `val_map50_95` improved, keep the code commit, log `keep`, regenerate `progress.png`, commit the telemetry snapshot, and push both the winning code state and telemetry.
+8. If `val_map50_95` did not improve, log `discard`, return the branch to the previous kept code state, regenerate `progress.png`, commit the telemetry snapshot, and push that telemetry-only update.
+9. If a telemetry push fails, stop immediately and report the blocker instead of continuing with unsaved progress.
+10. Move on to the next hypothesis immediately.
 
 The first run must be the unmodified baseline. Record it as `keep`.
 
