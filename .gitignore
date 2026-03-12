@@ -20,7 +20,6 @@ AGENTS.md
 dev/
 
 # Results file
-results.tsv
 run.log
 
 # Local datasets and downloaded pretrained checkpoints

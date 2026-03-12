@@ -29,7 +29,7 @@ Dataset-YOLO/           canonical local split (gitignored)
   labels/{train,val,test}
 ```
 
-Datasets and generated training outputs are local-only artifacts and should not be committed.
+Datasets, raw logs, and generated training outputs under `runs/` are local-only artifacts and should not be committed. The exceptions are `results.tsv` and `progress.png`, which act as durable experiment telemetry.
 
 ## Requirements
 
@@ -116,10 +116,10 @@ The repository is designed to support repeated experiments where an agent:
 2. establishes a baseline run
 3. edits only the experiment constants in `train.py`
 4. reruns training
-5. logs the resulting metrics to a local `results.tsv`
+5. logs the resulting metrics to versioned `results.tsv` and refreshes `progress.png`
 
 That makes the codebase small enough for fast iteration while keeping evaluation consistent across runs.
 
 ## Analysis
 
-Use `analysis.ipynb` to inspect `results.tsv` after several experiments. The notebook is aligned with the current YOLO schema and tracks `val_map50_95` as the primary frontier metric, with higher values treated as better. It also regenerates `progress.png`, which is embedded at the top of this README.
+Use `analysis.ipynb` to inspect `results.tsv` after several experiments. The notebook is aligned with the current YOLO schema and tracks `val_map50_95` as the primary frontier metric, with higher values treated as better. It also regenerates `progress.png`, which is embedded at the top of this README. In the default workflow, both files are committed so progress survives pod restarts or eviction.
