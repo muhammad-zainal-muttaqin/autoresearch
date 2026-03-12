@@ -1,5 +1,7 @@
 # autoresearch
 
+![teaser](progress.png)
+
 This repository applies the "autoresearch" idea to a practical computer vision task: autonomous tuning of a YOLO detector for oil palm fruit bunch images. Instead of editing a large codebase, the workflow is intentionally narrow: `prepare.py` defines the fixed dataset and evaluation harness, while `train.py` is the main experiment surface.
 
 The current project trains and evaluates a detector on 4 classes: `B1`, `B2`, `B3`, and `B4`.
