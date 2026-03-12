@@ -24,7 +24,6 @@ results.tsv
 run.log
 baseline.log
 followup.log
-progress.png
 
 # Local datasets and downloaded pretrained checkpoints
 Dataset-YOLO/
