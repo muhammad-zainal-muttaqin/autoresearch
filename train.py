@@ -34,7 +34,7 @@ LRF = 0.01
 MOMENTUM = 0.937
 WEIGHT_DECAY = 0.0005
 WARMUP_EPOCHS = 3.0
-COS_LR = False
+COS_LR = True
 
 # ── Batch & image ────────────────────────────────────────────────────────────
 BATCH = 16
