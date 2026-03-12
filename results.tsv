@@ -2,3 +2,4 @@ commit	val_map50	val_map50_95	precision	recall	memory_gb	status	description
 29a11b9	0.000000	0.000000	0.000000	0.000000	0.0	crash	baseline dataset yaml path bug
 9be36b5	0.550620	0.255193	0.504734	0.632903	11.5	keep	baseline yolov9c 640 b16
 1da12b8	0.535738	0.254253	0.491313	0.605579	14.9	discard	imgsz 800
+7004205	0.532438	0.251807	0.472767	0.630401	10.0	keep	baseline rerun yolov9c 640 b16
