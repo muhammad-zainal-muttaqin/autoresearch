@@ -1,114 +1,140 @@
 # autoresearch
 
-This is an experiment to have the LLM do its own research.
+This repository is a Karpathy-style `autoresearch` harness for YOLO object detection. You are the orchestrator. The human edits this file over time; you edit `train.py`.
 
 ## Setup
 
-To set up a new experiment, work with the user to:
+Before starting a run:
 
-1. **Agree on a run tag**: propose a tag based on today's date (e.g. `mar5`). The branch `autoresearch/<tag>` must not already exist — this is a fresh run.
-2. **Create the branch**: `git checkout -b autoresearch/<tag>` from current master.
-3. **Read the in-scope files**: The repo is small. Read these files for full context:
-   - `README.md` — repository context.
-   - `prepare.py` — fixed constants, data prep, tokenizer, dataloader, evaluation. Do not modify.
-   - `train.py` — the file you modify. Model architecture, optimizer, training loop.
-4. **Verify data exists**: Check that `~/.cache/autoresearch/` contains data shards and a tokenizer. If not, tell the human to run `uv run prepare.py`.
-5. **Initialize results.tsv**: Create `results.tsv` with just the header row. The baseline will be recorded after the first run.
-6. **Confirm and go**: Confirm setup looks good.
+1. Choose a run tag based on the date, for example `mar12`.
+2. Create a dedicated branch named `autoresearch/<tag>`. Do not assume the default branch is called `master` or `main`; inspect the current branch first.
+3. Read the full context from these files:
+   - `program.md`
+   - `prepare.py`
+   - `train.py`
+4. Run `uv run prepare.py` to verify the dataset.
+5. Ensure `results.tsv` exists in the repository root with this exact header:
 
-Once you get confirmation, kick off the experimentation.
-
-## Experimentation
-
-Each experiment runs on a single GPU. The training script runs for a **fixed time budget of 5 minutes** (wall clock training time, excluding startup/compilation). You launch it simply as: `uv run train.py`.
-
-**What you CAN do:**
-- Modify `train.py` — this is the only file you edit. Everything is fair game: model architecture, optimizer, hyperparameters, training loop, batch size, model size, etc.
-
-**What you CANNOT do:**
-- Modify `prepare.py`. It is read-only. It contains the fixed evaluation, data loading, tokenizer, and training constants (time budget, sequence length, etc).
-- Install new packages or add dependencies. You can only use what's already in `pyproject.toml`.
-- Modify the evaluation harness. The `evaluate_bpb` function in `prepare.py` is the ground truth metric.
-
-**The goal is simple: get the lowest val_bpb.** Since the time budget is fixed, you don't need to worry about training time — it's always 5 minutes. Everything is fair game: change the architecture, the optimizer, the hyperparameters, the batch size, the model size. The only constraint is that the code runs without crashing and finishes within the time budget.
-
-**VRAM** is a soft constraint. Some increase is acceptable for meaningful val_bpb gains, but it should not blow up dramatically.
-
-**Simplicity criterion**: All else being equal, simpler is better. A small improvement that adds ugly complexity is not worth it. Conversely, removing something and getting equal or better results is a great outcome — that's a simplification win. When evaluating whether to keep a change, weigh the complexity cost against the improvement magnitude. A 0.001 val_bpb improvement that adds 20 lines of hacky code? Probably not worth it. A 0.001 val_bpb improvement from deleting code? Definitely keep. An improvement of ~0 but much simpler code? Keep.
-
-**The first run**: Your very first run should always be to establish the baseline, so you will run the training script as is.
-
-## Output format
-
-Once the script finishes it prints a summary like this:
-
-```
----
-val_bpb:          0.997900
-training_seconds: 300.1
-total_seconds:    325.9
-peak_vram_mb:     45060.2
-mfu_percent:      39.80
-total_tokens_M:   499.6
-num_steps:        953
-num_params_M:     50.3
-depth:            8
+```text
+commit	val_map50	val_map50_95	precision	recall	memory_gb	status	description
 ```
 
-Note that the script is configured to always stop after 5 minutes, so depending on the computing platform of this computer the numbers might look different. You can extract the key metric from the log file:
+6. Run the baseline once before changing anything. The baseline is the current `train.py` as-is.
 
-```
-grep "^val_bpb:" run.log
-```
+## Scope
 
-## Logging results
+What you may change:
 
-When an experiment is done, log it to `results.tsv` (tab-separated, NOT comma-separated — commas break in descriptions).
+- Only `train.py`
+- Only the experiment surface above `main()`
+- Model choice, optimizer, learning rate schedule, image size, batch size, augmentation, freeze, loss weights, and time budget
 
-The TSV has a header row and 5 columns:
+What you must not change during normal experimentation:
 
-```
-commit	val_bpb	memory_gb	status	description
-```
+- `prepare.py`
+- `Dataset-YOLO/data.yaml`
+- evaluation settings
+- dependency lists
+- repository paths
 
-1. git commit hash (short, 7 chars)
-2. val_bpb achieved (e.g. 1.234567) — use 0.000000 for crashes
-3. peak memory in GB, round to .1f (e.g. 12.3 — divide peak_vram_mb by 1024) — use 0.0 for crashes
-4. status: `keep`, `discard`, or `crash`
-5. short text description of what this experiment tried
+The goal is to maximize `val_map50_95`. Higher is better.
 
-Example:
+## Path Rules
 
-```
-commit	val_bpb	memory_gb	status	description
-a1b2c3d	0.997900	44.0	keep	baseline
-b2c3d4e	0.993200	44.2	keep	increase LR to 0.04
-c3d4e5f	1.005000	44.0	discard	switch to GeLU activation
-d4e5f6g	0.000000	0.0	crash	double model width (OOM)
-```
+This repository must stay portable across local machines, RunPod, and other cloud GPU environments.
 
-## The experiment loop
+- Keep all default paths repo-relative.
+- If the dataset is not inside the repo, use `YOLO_DATASET_DIR` in the shell environment for that session only. Relative values are resolved from the repository root.
+- Never hardcode machine-specific prefixes such as `C:\...`, `/workspace/...`, `/runpod-volume/...`, or user home directories into the code.
+- Training artifacts belong under the repo-local `runs/` directory.
+- `results.tsv` stays local and untracked.
 
-The experiment runs on a dedicated branch (e.g. `autoresearch/mar5` or `autoresearch/mar5-gpu0`).
+## Output Contract
 
-LOOP FOREVER:
+Each training run ends by printing a stable summary block. The important keys are:
 
-1. Look at the git state: the current branch/commit we're on
-2. Tune `train.py` with an experimental idea by directly hacking the code.
-3. git commit
-4. Run the experiment: `uv run train.py > run.log 2>&1` (redirect everything — do NOT use tee or let output flood your context)
-5. Read out the results: `grep "^val_bpb:\|^peak_vram_mb:" run.log`
-6. If the grep output is empty, the run crashed. Run `tail -n 50 run.log` to read the Python stack trace and attempt a fix. If you can't get things to work after more than a few attempts, give up.
-7. Record the results in the tsv (NOTE: do not commit the results.tsv file, leave it untracked by git)
-8. If val_bpb improved (lower), you "advance" the branch, keeping the git commit
-9. If val_bpb is equal or worse, you git reset back to where you started
+- `val_map50`
+- `val_map50_95`
+- `precision`
+- `recall`
+- `peak_vram_mb`
+- `total_seconds`
+- `model`
+- `optimizer`
+- `lr0`
+- `imgsz`
+- `batch`
+- per-class metrics such as `map50_B1` and `map50_95_B4`
 
-The idea is that you are a completely autonomous researcher trying things out. If they work, keep. If they don't, discard. And you're advancing the branch so that you can iterate. If you feel like you're getting stuck in some way, you can rewind but you should probably do this very very sparingly (if ever).
+Parse those values from the log or terminal output. Do not rely on Unix-only tools such as `grep`, `awk`, `bc`, `timeout`, or `tail` if your environment does not provide them. Prefer your terminal tooling or a short Python snippet when parsing logs.
 
-**Timeout**: Each experiment should take ~5 minutes total (+ a few seconds for startup and eval overhead). If a run exceeds 10 minutes, kill it and treat it as a failure (discard and revert).
+## Logging Results
 
-**Crashes**: If a run crashes (OOM, or a bug, or etc.), use your judgment: If it's something dumb and easy to fix (e.g. a typo, a missing import), fix it and re-run. If the idea itself is fundamentally broken, just skip it, log "crash" as the status in the tsv, and move on.
+After every experiment, append exactly one row to `results.tsv`.
 
-**NEVER STOP**: Once the experiment loop has begun (after the initial setup), do NOT pause to ask the human if you should continue. Do NOT ask "should I keep going?" or "is this a good stopping point?". The human might be asleep, or gone from a computer and expects you to continue working *indefinitely* until you are manually stopped. You are autonomous. If you run out of ideas, think harder — read papers referenced in the code, re-read the in-scope files for new angles, try combining previous near-misses, try more radical architectural changes. The loop runs until the human interrupts you, period.
+Columns:
 
-As an example use case, a user might leave you running while they sleep. If each experiment takes you ~5 minutes then you can run approx 12/hour, for a total of about 100 over the duration of the average human sleep. The user then wakes up to experimental results, all completed by you while they slept!
+1. `commit`
+2. `val_map50`
+3. `val_map50_95`
+4. `precision`
+5. `recall`
+6. `memory_gb`
+7. `status`
+8. `description`
+
+Status values:
+
+- `keep`
+- `discard`
+- `crash`
+
+Rules:
+
+- Use the short Git commit hash for `commit`.
+- Convert `peak_vram_mb` to `memory_gb`.
+- Use `0.000000` and `0.0` for crashed runs.
+- Keep descriptions short and specific.
+- Never commit `results.tsv`.
+
+## The Experiment Loop
+
+Repeat this loop until the human stops you:
+
+1. Read `results.tsv` and identify one concrete next hypothesis.
+2. Edit only the relevant constants in `train.py`.
+3. Commit the change with a short experiment message such as `exp: imgsz 800`.
+4. Run `uv run train.py` and capture the output to `run.log` if possible.
+5. Parse the summary block.
+6. If the run crashed, inspect the traceback, log a `crash` row, make the simplest reasonable fix, and continue.
+7. If `val_map50_95` improved, keep the commit and log `keep`.
+8. If `val_map50_95` did not improve, log `discard` and return the branch to the previous kept state.
+9. Move on to the next hypothesis immediately.
+
+The first run must be the unmodified baseline. Record it as `keep`.
+
+## Decision Rules
+
+- Prefer simple changes over complex ones when the metric gain is small.
+- VRAM is a soft constraint, but OOM is an automatic failure.
+- If a run is unstable, reduce `BATCH`, `IMGSZ`, or augmentation strength before trying more exotic ideas.
+- After several near-misses, try a larger conceptual shift instead of tiny nudges.
+- Do not stop to ask for confirmation once the loop is underway unless you are blocked by missing data, missing dependencies, or an ambiguous repository state.
+
+## Suggested Search Space
+
+Useful axes for YOLO experimentation here:
+
+- model family: `yolov8*`, `yolov9*`, `yolo11*`, other Ultralytics-supported checkpoints
+- image size: `640`, `800`, `960`, `1024`
+- optimizer: `AdamW`, `SGD`, `NAdam`, `RAdam`
+- training budget: modest increases to `TIME_HOURS` when the curve still looks promising
+- augmentation: `mosaic`, `mixup`, `copy_paste`, `fliplr`, `erasing`, `close_mosaic`
+- regularization and transfer: `freeze`, `weight_decay`, warmup, cosine LR
+- localization balance: `box`, `cls`, `dfl`
+
+Domain-specific notes:
+
+- Small objects are likely the main bottleneck.
+- Larger `IMGSZ` can help, but it also increases VRAM pressure.
+- Per-class metrics matter; a small global gain that collapses one class is suspicious.
