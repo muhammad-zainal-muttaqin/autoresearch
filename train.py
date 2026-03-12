@@ -4,6 +4,7 @@ The autoresearch agent edits THIS file — specifically the constants at the top
 Usage: uv run train.py
 """
 
+import os
 import time
 import shutil
 import torch
@@ -127,12 +128,18 @@ def main():
         train_args["freeze"] = FREEZE
 
     t0 = time.time()
-    model.train(**train_args)
-    elapsed = time.time() - t0
+    repo_cwd = os.getcwd()
+    # Ultralytics resolves relative paths in external data.yaml files from cwd.
+    os.chdir(DATA_YAML.parent)
+    try:
+        model.train(**train_args)
+        elapsed = time.time() - t0
 
-    # ── Evaluate best model ──────────────────────────────────────────────
-    print("\nEvaluating best.pt...")
-    metrics = evaluate_model(BEST_WEIGHTS)
+        # ── Evaluate best model ──────────────────────────────────────────
+        print("\nEvaluating best.pt...")
+        metrics = evaluate_model(BEST_WEIGHTS)
+    finally:
+        os.chdir(repo_cwd)
 
     # ── VRAM usage ───────────────────────────────────────────────────────
     peak_vram = torch.cuda.max_memory_allocated() / 1024 / 1024
