@@ -1,7 +1,5 @@
 # autoresearch
 
-![teaser](progress.png)
-
 This repository applies the "autoresearch" idea to a practical computer vision task: autonomous tuning of a YOLO detector for oil palm fruit bunch images. Instead of editing a large codebase, the workflow is intentionally narrow: `prepare.py` defines the fixed dataset and evaluation harness, while `train.py` is the main experiment surface.
 
 The current project trains and evaluates a detector on 4 classes: `B1`, `B2`, `B3`, and `B4`.
@@ -30,6 +28,12 @@ Dataset-YOLO/           canonical local split (gitignored)
 ```
 
 Datasets and generated training outputs are local-only artifacts and should not be committed.
+
+## Editing and Artifact Policy
+
+- `train.py` is the only file the autoresearch agent should change during normal experimentation.
+- `prepare.py` is read-only unless a confirmed runtime bug blocks execution.
+- `results.tsv`, `baseline.log`, `followup.log`, and `progress.png` are local artifacts and must stay uncommitted.
 
 ## Requirements
 
