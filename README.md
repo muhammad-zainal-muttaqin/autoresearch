@@ -22,6 +22,7 @@ The primary optimization target is `val_map50_95`. Higher is better.
 train.py                editable experiment surface
 prepare.py              dataset constants, verification, evaluation
 program.md              agent instructions and experiment protocol
+plot_progress.py        regenerate progress.png from results.tsv
 pyproject.toml          Python dependencies
 Dataset-YOLO/           canonical local split (gitignored)
   data.yaml             dataset config
@@ -36,7 +37,7 @@ Datasets, raw logs, and generated training outputs under `runs/` are local-only 
 - `train.py` is the only file the autoresearch agent should change during normal experimentation.
 - `prepare.py` is read-only unless a confirmed runtime bug blocks execution.
 - `results.tsv`, `baseline.log`, and `followup.log` are local artifacts and must stay uncommitted.
-- `progress.png` must be regenerated from the current local `results.tsv` whenever a new result is recorded, and should be committed when publishing branch progress.
+- `progress.png` must be regenerated from the current local `results.tsv` with `uv run python plot_progress.py` whenever a new result is recorded, and should be committed when publishing branch progress.
 
 ## Requirements
 
@@ -129,4 +130,4 @@ That makes the codebase small enough for fast iteration while keeping evaluation
 
 ## Analysis
 
-Use `analysis.ipynb` to inspect `results.tsv` after several experiments. The notebook is aligned with the current YOLO schema and tracks `val_map50_95` as the primary frontier metric, with higher values treated as better. It also regenerates `progress.png`, which is embedded at the top of this README. In the default workflow, both files are committed so progress survives pod restarts or eviction.
+Use `analysis.ipynb` to inspect `results.tsv` after several experiments. For the canonical repo thumbnail, regenerate `progress.png` with `uv run python plot_progress.py`; that script labels points from the experiment description rather than the commit hash. The notebook is still useful for ad hoc inspection, and both `results.tsv` and `progress.png` are committed in the default workflow so progress survives pod restarts or eviction.

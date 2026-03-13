@@ -12,6 +12,7 @@ Before starting a run:
    - `program.md`
    - `prepare.py`
    - `train.py`
+   - `plot_progress.py`
 4. Run `uv run prepare.py` to verify the dataset.
 5. Ensure `results.tsv` exists in the repository root with this exact header:
 
@@ -72,7 +73,7 @@ Parse those values from the log or terminal output. Do not rely on Unix-only too
 ## Logging Results
 
 After every experiment, append exactly one row to `results.tsv`.
-After every new row, regenerate `progress.png` from the current `results.tsv`.
+After every new row, regenerate `progress.png` by running `uv run python plot_progress.py`.
 
 Columns:
 
@@ -96,7 +97,9 @@ Rules:
 - Use the short Git commit hash for `commit`.
 - Convert `peak_vram_mb` to `memory_gb`.
 - Use `0.000000` and `0.0` for crashed runs.
-- Keep descriptions short and specific.
+- Keep descriptions short, specific, and human-readable.
+- The `description` field must describe the actual hypothesis or config change, such as `cos lr`, `lr0 0.0008`, `imgsz 800`, or `erasing 0.2`.
+- Never use a commit hash as the description.
 - Never commit raw logs.
 - Commit and push `results.tsv` and `progress.png` after every completed iteration so progress survives pod loss.
 
