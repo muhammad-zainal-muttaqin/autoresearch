@@ -1,147 +1,173 @@
-# autoresearch
+# autoresearch — autonomous YOLO agent
 
-This repository is a Karpathy-style `autoresearch` harness for YOLO object detection. You are the orchestrator. The human edits this file over time; you edit `train.py`.
+You are an autonomous research agent. Your single mission is to **maximize val_map50_95** on this palm oil fruit bunch detection dataset. Target: **>50% val_map50_95**. You run forever in a loop until a human stops you.
 
-## Setup
+## Constraints
 
-Before starting a run:
+- **Model**: YOLOv9c only. Do not switch models.
+- **Time per iteration**: max 20 minutes (`TIME_HOURS=0.33`).
+- **Edit scope**: only the constants at the top of `train.py` (above `main()`).
+- **Do not change**: `prepare.py`, `plot_progress.py`, `Dataset-YOLO/data.yaml`, evaluation logic, dependency lists, repository paths.
 
-1. Choose a run tag based on the date, for example `mar12`.
-2. Create a dedicated branch named `autoresearch/<tag>`. Do not assume the default branch is called `master` or `main`; inspect the current branch first.
-3. Read the full context from these files:
-   - `program.md`
-   - `prepare.py`
-   - `train.py`
-   - `plot_progress.py`
+## Setup (once, at the very start)
+
+1. Read `program.md`, `train.py`, `prepare.py`, `plot_progress.py`.
+2. Read `rangkuman-progress/rangkuman.md` — this is the history of everything tried before. Use it to avoid repeating failed ideas.
+3. Read `results.tsv` to know the current best val_map50_95 and what has been tried in this run.
 4. Run `uv run prepare.py` to verify the dataset.
-5. Ensure `results.tsv` exists in the repository root with this exact header:
+5. Ensure `results.tsv` exists with header: `commit	val_map50	val_map50_95	precision	recall	memory_gb	status	description`
+6. If no baseline row exists yet, run the current `train.py` as-is as the baseline before changing anything.
 
-```text
-commit	val_map50	val_map50_95	precision	recall	memory_gb	status	description
+## What has already been tried (do NOT repeat these)
+
+From the rangkuman and results.tsv, these approaches have been tried and did NOT break the ceiling:
+
+- **imgsz 800**: discard, no improvement over 640
+- **patience 30**: discard, no improvement
+- **erasing 0.2**: discard, no improvement (0.4 is current best)
+- **YOLO26 family**: consistently weaker than YOLOv9c
+- **YOLOv8 family**: weaker than YOLOv9c
+- **YOLO11 family**: no advantage over YOLOv9c
+- **imgsz 1280**: no benefit over 1024 in prior benchmarks
+- **300+ epochs**: no improvement, early stopping kicks in
+- **SAHI inference**: hurts performance on this dataset
+- **P2-head**: no breakthrough
+- **OIV7/Obj365 pretrained**: no breakthrough
+- **Advanced augmentation combos (copy_paste, mixup, degrees)**: no breakthrough in prior experiments
+- **Optimizer auto**: worse than AdamW
+- **SGD/MuSGD**: weaker than AdamW on this dataset
+- **Two-stage specialist+finetune**: marginal, not worth complexity here
+
+## What TO explore (be creative, combine ideas)
+
+These are promising directions that have NOT been fully explored in autoresearch RunPod:
+
+1. **imgsz 1024** — best resolution in prior benchmarks, never tried here yet. HIGH PRIORITY.
+2. **imgsz 960** — compromise between 640 and 1024
+3. **Loss weight tuning** — increase `box` (try 10.0, 12.5), increase `cls` (try 1.0, 1.5, 2.0), increase `dfl` (try 2.0, 2.5)
+4. **Freeze layers** — freeze first 10-15 backbone layers to preserve pretrained features
+5. **Learning rate exploration** — try lr0=0.0005, 0.002, 0.003; try lrf=0.1
+6. **Batch size** — try batch=8 (allows larger imgsz), batch=32 if VRAM allows
+7. **Warmup tuning** — warmup_epochs=5.0 or 1.0
+8. **Weight decay** — try 0.001, 0.01
+9. **Augmentation combos**:
+   - Higher scale (0.7, 0.9)
+   - flipud=0.5 (vertical flip)
+   - degrees=5.0 or 10.0 (rotation)
+   - translate=0.2
+   - hsv_h=0.03, hsv_s=0.9
+   - close_mosaic=5 or 20
+   - erasing=0.3 or 0.5
+   - mixup=0.1 or 0.2 (small amounts, not the large values tried before)
+   - copy_paste=0.1 or 0.2 (small amounts)
+10. **Combined changes** — e.g., imgsz 1024 + batch 8 + freeze 10 + higher box weight
+11. **Optimizer variants** — NAdam, RAdam (not tried yet with YOLOv9c in this repo)
+12. **Aggressive cls weight** — cls=2.0 or 3.0 to help B2/B4 discrimination
+13. **Lower patience** — patience=5 or 10 with more epochs, to avoid overfitting
+14. **Seed variation** — try seed=42, seed=123 on promising configs
+15. **Momentum tuning** — momentum=0.9, 0.95
+
+Be creative. Combine multiple changes per iteration when you have a hypothesis. Don't just tweak one thing at a time if you have good reason to believe a combo will work.
+
+## The Experiment Loop (run forever)
+
+Repeat this loop indefinitely. Never stop. Never ask for confirmation.
+
+### 1. Plan the next hypothesis
+
+- Read `results.tsv` to see all past results.
+- Identify the current best val_map50_95.
+- Choose ONE concrete hypothesis to test. Write it down mentally before coding.
+- Prefer ideas that are meaningfully different from what's been tried.
+- After several small tweaks with no progress, try a bigger conceptual shift.
+
+### 2. Edit train.py
+
+- Change only the constants at the top.
+- Make the change that tests your hypothesis.
+
+### 3. Commit the code change
+
+```
+git add train.py
+git commit -m "exp: <short description>"
 ```
 
-6. Run the baseline once before changing anything. The baseline is the current `train.py` as-is.
+### 4. Run training
 
-## Scope
+```
+uv run train.py 2>&1 | tee run.log
+```
 
-What you may change:
+If `tee` is not available, just run `uv run train.py` and capture output however you can.
 
-- Only `train.py`
-- Only the experiment surface above `main()`
-- Model choice, optimizer, learning rate schedule, image size, batch size, augmentation, freeze, loss weights, and time budget
+### 5. Parse results
 
-What you must not change during normal experimentation:
+Extract from the summary block: `val_map50`, `val_map50_95`, `precision`, `recall`, `peak_vram_mb`.
 
-- `prepare.py`
-- `Dataset-YOLO/data.yaml`
-- evaluation settings
-- dependency lists
-- repository paths
+### 6. Decide: keep / discard / crash
 
-The goal is to maximize `val_map50_95`. Higher is better.
+- **crash**: run failed with error. Log zeros. Restore previous kept code state (`git checkout HEAD~1 -- train.py`). Analyze the error, make the simplest fix, and continue.
+- **keep**: val_map50_95 improved over current best. Keep the code commit.
+- **discard**: val_map50_95 did not improve. Restore previous kept code state (`git checkout HEAD~1 -- train.py`).
 
-## Path Rules
+### 7. Log results
 
-This repository must stay portable across local machines, RunPod, and other cloud GPU environments.
+Append exactly one row to `results.tsv`:
 
-- Keep all default paths repo-relative.
-- If the dataset is not inside the repo, use `YOLO_DATASET_DIR` in the shell environment for that session only. Relative values are resolved from the repository root.
-- Never hardcode machine-specific prefixes such as `C:\...`, `/workspace/...`, `/runpod-volume/...`, or user home directories into the code.
-- Training artifacts belong under the repo-local `runs/` directory.
-- `results.tsv` and `progress.png` are tracked experiment telemetry.
-- Raw logs such as `baseline.log`, `followup.log`, and `run.log` stay local and untracked.
+```
+<short_commit_hash>\t<val_map50>\t<val_map50_95>\t<precision>\t<recall>\t<memory_gb>\t<status>\t<description>
+```
 
-## Output Contract
-
-Each training run ends by printing a stable summary block. The important keys are:
-
-- `val_map50`
-- `val_map50_95`
-- `precision`
-- `recall`
-- `peak_vram_mb`
-- `total_seconds`
-- `model`
-- `optimizer`
-- `lr0`
-- `imgsz`
-- `batch`
-- per-class metrics such as `map50_B1` and `map50_95_B4`
-
-Parse those values from the log or terminal output. Do not rely on Unix-only tools such as `grep`, `awk`, `bc`, `timeout`, or `tail` if your environment does not provide them. Prefer your terminal tooling or a short Python snippet when parsing logs.
-
-## Logging Results
-
-After every experiment, append exactly one row to `results.tsv`.
-After every new row, regenerate `progress.png` by running `uv run python plot_progress.py`.
-
-Columns:
-
-1. `commit`
-2. `val_map50`
-3. `val_map50_95`
-4. `precision`
-5. `recall`
-6. `memory_gb`
-7. `status`
-8. `description`
-
-Status values:
-
-- `keep`
-- `discard`
-- `crash`
-
-Rules:
-
-- Use the short Git commit hash for `commit`.
-- Convert `peak_vram_mb` to `memory_gb`.
+- Use short git hash from the experiment commit (not the telemetry commit).
+- Convert peak_vram_mb to GB.
 - Use `0.000000` and `0.0` for crashed runs.
-- Keep descriptions short, specific, and human-readable.
-- The `description` field must describe the actual hypothesis or config change, such as `cos lr`, `lr0 0.0008`, `imgsz 800`, or `erasing 0.2`.
-- Never use a commit hash as the description.
-- Never commit raw logs.
-- Commit and push `results.tsv` and `progress.png` after every completed iteration so progress survives pod loss.
+- Description: short, specific — e.g., `imgsz 1024 batch 8`, `cls 2.0 box 10`, `freeze 10 lr 0.002`.
 
-## The Experiment Loop
+### 8. Generate progress plot
 
-Repeat this loop until the human stops you:
+```
+uv run python plot_progress.py
+```
 
-1. Read `results.tsv` and identify one concrete next hypothesis.
-2. Edit only the relevant constants in `train.py`.
-3. Commit the change with a short experiment message such as `exp: imgsz 800`.
-4. Run `uv run train.py` and capture the output to `run.log` if possible.
-5. Parse the summary block.
-6. If the run crashed, inspect the traceback, log a `crash` row, restore the previous kept code state, regenerate `progress.png`, commit the telemetry snapshot, push it, then make the simplest reasonable fix before continuing.
-7. If `val_map50_95` improved, keep the code commit, log `keep`, regenerate `progress.png`, commit the telemetry snapshot, and push both the winning code state and telemetry.
-8. If `val_map50_95` did not improve, log `discard`, return the branch to the previous kept code state, regenerate `progress.png`, commit the telemetry snapshot, and push that telemetry-only update.
-9. If a telemetry push fails, stop immediately and report the blocker instead of continuing with unsaved progress.
-10. Move on to the next hypothesis immediately.
+### 9. Write iteration report
 
-The first run must be the unmodified baseline. Record it as `keep`.
+Create/append a short markdown note about what you tried, what happened, and what you learned. This helps you plan the next iteration.
+
+### 10. Commit and push telemetry
+
+```
+git add results.tsv progress.png
+git commit -m "telemetry: <description>"
+git push
+```
+
+**If push fails, STOP and report the blocker.** Do not continue with unsaved progress.
+
+### 11. Loop
+
+Go back to step 1. Immediately. Do not pause. Do not ask for confirmation.
 
 ## Decision Rules
 
-- Prefer simple changes over complex ones when the metric gain is small.
-- VRAM is a soft constraint, but OOM is an automatic failure.
-- If a run is unstable, reduce `BATCH`, `IMGSZ`, or augmentation strength before trying more exotic ideas.
-- After several near-misses, try a larger conceptual shift instead of tiny nudges.
-- Do not stop to ask for confirmation once the loop is underway unless you are blocked by missing data, missing dependencies, or an ambiguous repository state.
+- Higher val_map50_95 = better. That's the only metric that matters for keep/discard.
+- If a run OOMs, reduce batch size or imgsz before retrying.
+- If several small tweaks plateau, try a larger change (e.g., jump to imgsz 1024, or combine freeze + higher resolution + adjusted LR).
+- Watch per-class metrics — B2 and B4 are the hardest classes. Changes that help those classes are especially valuable.
+- Do not repeat an experiment that's already in results.tsv with the same config.
+- Be bold. The current ceiling is ~0.258 val_map50_95. Breaking through requires something meaningfully different.
 
-## Suggested Search Space
+## Path Rules
 
-Useful axes for YOLO experimentation here:
+- All paths must be repo-relative. Never hardcode machine-specific paths.
+- Training artifacts go under `runs/`.
+- `results.tsv` and `progress.png` are tracked telemetry.
+- Raw logs (`run.log`, `baseline.log`) stay local and untracked.
 
-- model family: `yolov8*`, `yolov9*`, `yolo11*`, other Ultralytics-supported checkpoints
-- image size: `640`, `800`, `960`, `1024`
-- optimizer: `AdamW`, `SGD`, `NAdam`, `RAdam`
-- training budget: modest increases to `TIME_HOURS` when the curve still looks promising
-- augmentation: `mosaic`, `mixup`, `copy_paste`, `fliplr`, `erasing`, `close_mosaic`
-- regularization and transfer: `freeze`, `weight_decay`, warmup, cosine LR
-- localization balance: `box`, `cls`, `dfl`
+## Remember
 
-Domain-specific notes:
-
-- Small objects are likely the main bottleneck.
-- Larger `IMGSZ` can help, but it also increases VRAM pressure.
-- Per-class metrics matter; a small global gain that collapses one class is suspicious.
+- You are autonomous. Make your own decisions about what to try next.
+- You never stop. Loop forever.
+- Target: val_map50_95 > 50%.
+- Current best: check results.tsv.
+- Be creative. Be bold. The dataset has label noise (B2/B3 confusion) and small objects (B4) as known bottlenecks. Work around them.
