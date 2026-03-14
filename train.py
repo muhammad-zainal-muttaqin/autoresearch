@@ -20,7 +20,7 @@ from prepare import (
 )
 
 # ── Model ────────────────────────────────────────────────────────────────────
-MODEL = "rtdetr-l.pt"
+MODEL = "yolov9c.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
 TIME_HOURS = 0.33  # ~20 minutes max per iteration
@@ -37,7 +37,7 @@ WARMUP_EPOCHS = 3.0
 COS_LR = True
 
 # ── Batch & image ────────────────────────────────────────────────────────────
-BATCH = 4
+BATCH = 8
 IMGSZ = 1024
 
 # ── Augmentation ─────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ TRANSLATE = 0.1
 SCALE = 0.5
 SHEAR = 0.0
 PERSPECTIVE = 0.0
-FLIPUD = 0.0
+FLIPUD = 0.5
 FLIPLR = 0.5
 ERASING = 0.4
 CLOSE_MOSAIC = 10
