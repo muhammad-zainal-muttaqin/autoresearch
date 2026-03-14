@@ -20,7 +20,7 @@ from prepare import (
 )
 
 # ── Model ────────────────────────────────────────────────────────────────────
-MODEL = "yolov9e.pt"
+MODEL = "rtdetr-l.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
 TIME_HOURS = 0.33  # ~20 minutes max per iteration

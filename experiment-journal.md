@@ -111,6 +111,44 @@
 
 **Falsification**: If YOLOv9e doesn't improve over YOLOv9c, then model capacity is not the bottleneck. The problem is in the data quality/distribution, not model expressiveness.
 
+**Result**: val_map50_95=0.229457 (delta=-0.030423 from best 0.259880) — DISCARD
+
+**Per-class**:
+- B1: mAP50-95=0.391 (worse than YOLOv9c's 0.441)
+- B2: mAP50-95=0.167 (worse)
+- B3: mAP50-95=0.245 (worse)
+- B4: mAP50-95=0.115 (worse)
+
+**Analysis**: YOLOv9e significantly worse than YOLOv9c. Root cause: larger model needs more training time/epochs to converge. In the 20-min time budget, YOLOv9e gets fewer gradient updates than YOLOv9c. The underfitting is evident — all class metrics are worse. This is consistent with YOLOv9e being noted as "weaker" in the project history (though it was tested with different configs). The 20-min budget is too short for a 100M+ parameter model to converge on this data.
+
+**Falsification confirmed**: Model capacity is NOT the bottleneck (at least within this time budget). YOLOv9c's capacity is sufficient; the problem is data quality.
+
+**Key insight from experiments 1-5**:
+- imgsz=1024 helps (+0.002) → resolution matters, objects need to be bigger in image
+- Larger model (YOLOv9e) doesn't help within time budget → not a capacity problem
+- Class-balanced oversampling hurts → adding flipped copies reduces effective diversity
+- Loss weight changes don't help → default weights are well-tuned
+
+**Remaining high-impact ideas to try**:
+1. RT-DETR (transformer architecture for better context/disambiguation)
+2. Model soup/weight averaging (ensemble without inference cost)
+3. Tiled dataset (genuine resolution improvement for small B4 objects)
+4. Lower LR0 with higher LRF (different learning rate schedule)
+
+---
+
+## Experiment 6 — 2026-03-14 (RT-DETR transformer architecture)
+
+**Hypothesis**: If RT-DETR-L is used instead of YOLOv9c, the transformer's self-attention mechanism will improve B2/B3 disambiguation because attention captures global context (whole-image relationships) that CNN-based YOLO misses when deciding between ripeness stages B2 and B3.
+
+**Change**: MODEL=yolov9c.pt→rtdetr-l.pt, BATCH=4, IMGSZ=1024
+
+**Expected success criterion**: B2 mAP50-95 > 0.22 OR val_map50_95 > 0.265
+
+**Falsification**: If RT-DETR doesn't improve B2/B3 disambiguation, then self-attention is not what's needed — the problem is that B2 and B3 look genuinely similar regardless of model architecture, and only better labels or more data can solve it.
+
+
+
 
 
 

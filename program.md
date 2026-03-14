@@ -218,6 +218,12 @@ Go back to Step 1. No pause. No confirmation.
 - Two-stage pipeline: marginal in prior work
 - cos_lr: small improvement (current best config)
 - imgsz 1024 batch 8: KEEP — small improvement (current best: 0.25988)
+- Loss weight tuning (BOX=10, CLS=1.5, DFL=2.0) with imgsz=1024: DISCARD — 0.2566, more aggressive loss weighting hurt performance
+- Class-balanced dataset (B1/B4 oversampled 2-3x with geometric flip, 2764→6367 images): DISCARD — 0.2476. Conclusion: oversampling with flips adds noise not signal; within time budget more images = fewer epochs = underfitting; B4's bottleneck is NOT data quantity but resolution/context
+- YOLOv9e imgsz=1024 batch=4: DISCARD — 0.2295. Too large to converge in 20-min budget. Model capacity is NOT the bottleneck.
+- Label noise correction via high-conf model disagreement: NOT VIABLE — model can only flag corrections at conf>=0.5 but at that level it may itself be wrong. At conf>=0.7 there are 0 reliable corrections. Label noise is real but cannot be auto-corrected with current model accuracy.
+
+**KEY INSIGHT FROM EXPERIMENTS 1-5**: The ceiling is a DATA QUALITY problem, not a hyperparameter or model architecture problem. The best single-change improvement was imgsz=1024 (+0.002). All other approaches tried so far have failed or hurt performance.
 
 ### Current best config
 - YOLOv9c, imgsz=1024, batch=8, AdamW, cos_lr=True, erasing=0.4
