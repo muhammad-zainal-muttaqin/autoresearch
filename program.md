@@ -231,73 +231,229 @@ Go back to Step 1. No pause. No confirmation.
 
 ---
 
-## Priority Research Directions (evidence-based, not wishlist)
+## Priority Research Directions (evidence-based + cutting-edge literature 2024-2026)
 
-These are ordered by expected impact based on root cause analysis:
+Ordered by expected impact. These go BEYOND hyperparameter tuning — they are architectural, data pipeline, and training paradigm changes.
 
-### P1 — Label Noise Correction (HIGHEST IMPACT)
-Root cause: B2/B3 confusion is the #1 bottleneck.
-Approach:
-1. Run current best model on training set
-2. Find high-confidence predictions (conf>0.75) that disagree with label
-3. Focus on B2/B3 pairs — if model predicts B3 with >0.8 conf but label says B2, flag it
-4. Auto-correct top-N most confident mismatches
-5. Retrain on corrected dataset
-Expected: if label noise is causing 208 errors per val run, correcting even 50% of training noise should improve B2 mAP significantly.
+---
 
-### P2 — Class-Balanced Dataset (HIGH IMPACT for B1/B4)
-Root cause: B3 has 2-4x more instances than B1.
-Approach:
-1. Create `Dataset-Balanced/` by oversampling B1 and B4 images
-2. Use geometric augmentation (flip, rotate) to create copies
-3. Target ratio: approximately equal instances per class
-4. Retrain
+### TIER 1 — INPUT MODALITY CHANGE (Highest novelty, untested)
 
-### P3 — Tiled Dataset for B4
-Root cause: B4 small objects missed at any resolution.
-Approach: tile each image into 640x640 overlapping patches, adjust labels, train on tiles.
-This increases effective resolution for small objects without VRAM cost.
-
-### P4 — Model Ensemble / WBF
-Approach: train 3-5 models with different seeds on current best config, combine predictions with Weighted Box Fusion.
+#### T1-A: RGB-D 4-Channel Input via Synthetic Depth (Depth Anything V2)
+**Hypothesis**: Palm oil bunches at different ripeness stages may have slightly different 3D profiles. Adding a depth channel gives the model a 4th signal for discrimination.
+**Evidence**: YOLO-depth paper (ScienceDirect 2025) shows +4.9% mAP50-95 on detection tasks by adding synthetic depth as 4th channel.
+**Implementation**:
 ```bash
-pip install ensemble-boxes
+pip install depth-anything-v2
+# OR: pip install transformers  # HuggingFace pipeline
 ```
-Expected: ensemble typically gains +0.5 to +2% over best single model.
-
-### P5 — RT-DETR (Transformer Architecture)
-Root cause: CNN may not capture global context needed for B2/B3 disambiguation.
-RT-DETR uses attention, which sees whole image when classifying each box.
+1. Create `generate_depth.py` — load Depth Anything V2 (ViT-S for speed), run on all train/val/test images, save as 16-bit grayscale PNGs in `Dataset-RGBD/depth/`
+2. Create `rgbd_dataset.py` — custom Dataset that loads RGB + depth, stacks as 4-channel tensor
+3. Modify `train.py` to use custom 4-channel dataloader
+4. Modify first Conv layer to accept 4 channels (weight inflation):
 ```python
-MODEL = "rtdetr-l.pt"  # available in Ultralytics
-BATCH = 4
-IMGSZ = 1024
+# In training setup:
+first_conv = model.model[0].conv
+old_w = first_conv.weight.data  # [out, 3, k, k]
+new_w = torch.zeros(old_w.shape[0], 4, *old_w.shape[2:])
+new_w[:, :3] = old_w
+new_w[:, 3:4] = old_w.mean(dim=1, keepdim=True)  # depth channel init
+first_conv.weight = nn.Parameter(new_w)
 ```
+5. Update model YAML `ch: 3` → `ch: 4`
+**Expected**: +2-5% mAP if depth helps discriminate B4 (protruding, closer) from B1/B2/B3.
 
-### P6 — YOLOv9e (Larger Model)
-24GB VRAM available. Try the larger model:
+---
+
+### TIER 2 — ARCHITECTURE MODIFICATION
+
+#### T2-A: P2 Extra Detection Head (Best ROI for Small Objects)
+**Hypothesis**: B4 is missed because standard YOLOv9c has 3 detection scales (P3/P4/P5). Adding a P2 head (finer scale) gives the model a dedicated head for small objects.
+**Evidence**: Consistently reported +3-8% for small objects across SOD-YOLOv8, SMA-YOLO, FDM-YOLO papers (2024-2025).
+**Implementation**: Clone Ultralytics, install editable (`pip install -e .`), modify `yolov9c.yaml`:
+- Add a P2 feature extraction layer before P3
+- Add a 4th `Detect` head at P2 scale
+- Edit `ultralytics/nn/modules/__init__.py` if adding custom modules
+This is the single most-reported architecture improvement for small object detection.
+
+#### T2-B: CBAM Attention in Backbone
+**Hypothesis**: Channel + spatial attention helps the backbone focus on discriminative features for B2/B3.
+**Evidence**: C2f-CBAM variants show +3-6% mAP on fine-grained detection tasks.
+**Implementation**: Add CBAM module to Ultralytics:
 ```python
-MODEL = "yolov9e.pt"
-BATCH = 4
-IMGSZ = 1024
+# ultralytics/nn/modules/block.py
+class CBAM(nn.Module):
+    def __init__(self, c1, reduction=16, kernel_size=7):
+        super().__init__()
+        self.ca = ChannelAttention(c1, reduction)
+        self.sa = SpatialAttention(kernel_size)
+    def forward(self, x):
+        return self.sa(self.ca(x))
+
+class C2f_CBAM(nn.Module):
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
+        super().__init__()
+        self.c2f = C2f(c1, c2, n, shortcut, g, e)
+        self.cbam = CBAM(c2)
+    def forward(self, x):
+        return self.cbam(self.c2f(x))
+```
+Register in `__init__.py`, use in YAML as `C2f_CBAM`.
+
+#### T2-C: RF-DETR (DINOv2 backbone + Detection Head)
+**Hypothesis**: DINOv2 ViT backbone has vastly superior visual representations compared to CNN backbone, especially for fine-grained class disambiguation.
+**Evidence**: RF-DETR-Medium achieves 54.7% mAP on COCO, outperforms YOLO11 variants. On domain-specific fine-tuning tasks, DINOv2-based models show stronger gains.
+```bash
+pip install rfdetr
+```
+```python
+from rfdetr import RFDETRBase
+model = RFDETRBase()
+model.train(dataset_dir="Dataset-YOLO/", epochs=40, batch_size=8, lr=1e-4)
+```
+Note: eval metrics must be compared on same val set. Adapt `evaluate_model()` in prepare.py.
+
+#### T2-D: Deformable Convolutions (DCNv2) in Backbone
+**Hypothesis**: Deformable conv adapts receptive field to object shape, better for irregularly-shaped palm bunches.
+**Implementation**: Replace C2f blocks in the last 2 backbone stages with DCNv2 variants. Use `torchvision.ops.deform_conv2d`.
+
+---
+
+### TIER 3 — TRAINING PARADIGM CHANGE
+
+#### T3-A: Contrastive Loss on RoI Features (B2/B3 Disambiguation)
+**Hypothesis**: Standard cross-entropy loss doesn't explicitly push B2 and B3 embeddings apart. Adding SupCon loss on per-object features creates a more discriminative embedding space.
+**Evidence**: FGA-YOLO (ScienceDirect 2024) uses instance-level contrastive learning for fine-grained aircraft detection. Class prototype contrastive learning (arXiv 2510.11204) shows strong gains on fine-grained tasks.
+```bash
+pip install pytorch-metric-learning
+```
+```python
+from pytorch_metric_learning.losses import SupConLoss
+from pytorch_metric_learning.miners import BatchHardMiner
+
+class ContrastiveDetectionTrainer(DetectionTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.proj_head = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 128))
+        self.supcon = SupConLoss(temperature=0.07)
+        self.miner = BatchHardMiner()
+
+    def compute_loss(self, preds, batch):
+        det_loss, items = super().compute_loss(preds, batch)
+        # RoI-pool features → project → normalize → SupCon
+        # ... (see experiment-journal.md for full implementation)
+        return det_loss + 0.1 * con_loss, items
+```
+Start contrastive weight at 0, ramp linearly to 0.1 after epoch 10 (burn-in).
+
+#### T3-B: Semi-Supervised with EfficientTeacher
+**Hypothesis**: Test set (624 images) is unlabeled ground truth we can exploit. Adding pseudo-labels from test set may expand effective training data.
+```bash
+pip install efficientteacher  # Alibaba Research
+```
+Mean Teacher framework: student trained on labeled + pseudo-labeled data, teacher is EMA of student. FlexMatch for adaptive per-class thresholds.
+
+#### T3-C: Label Smoothing + Varifocal Loss
+**Hypothesis**: Hard labels for ambiguous B2/B3 create gradient conflicts. Soft labels reduce penalty for near-miss predictions.
+**Implementation** (trivial in Ultralytics):
+```python
+model.train(data='data.yaml', label_smoothing=0.1, use_vfl=True)
+```
+Or override `v8DetectionLoss` to use GHM-C loss:
+```bash
+# GHM loss: gradient harmonizing mechanism, beats focal loss by 0.8 mAP (AAAI 2019)
+pip install mmdet  # has GHM implementation
 ```
 
-### P7 — Foundation Model Auto-Annotation
-Use GroundingDINO + SAM2 to annotate additional unlabeled images.
-Expand training set by 500-1000 images.
+#### T3-D: Asymmetric Loss (ASL) for Class Imbalance
+```bash
+pip install git+https://github.com/Alibaba-MIIL/ASL.git
+```
+Different focal gamma for positives (γ+=0) vs negatives (γ-=4), plus hard thresholding of very-low-confidence negatives. Particularly effective for multi-class imbalance (B3 dominates).
 
-### P8 — Model Soup (Weight Averaging)
-Train 5 models with different seeds (0, 42, 123, 456, 999), average their weights.
-Model soup consistently outperforms individual models by 0.5-1%.
+---
 
-### P9 — Synthetic Data via Copy-Paste
-Extract B4 crops, paste onto images that lack B4.
-Extract B2 crops, augment and paste with varied backgrounds.
-Directly addresses B4 recall and B2 underrepresentation.
+### TIER 4 — DATA PIPELINE CHANGE
 
-### P10 — DINOv2 + Linear Probe Classifier
-Use DINOv2 as feature extractor for the two-stage pipeline classifier.
-DINOv2 features are significantly more discriminative than CNN features for fine-grained classification.
+#### T4-A: Tiled Training Dataset for B4
+**DIFFERENT from SAHI inference** (which failed). This is about training data.
+Cut training images into 640×640 tiles with 25% overlap → model trained on larger crops sees B4 objects much bigger.
+```python
+# make_tiled_dataset.py
+# For each image: slide window 640x640 stride 480
+# For each tile: keep labels whose center falls inside tile
+# Adjust coords to tile-relative, normalize
+# Save to Dataset-Tiled/
+# Val set: NOT tiled (evaluate on full images)
+```
+
+#### T4-B: CLIP-Based Label Cleaning
+```bash
+pip install git+https://github.com/openai/CLIP.git
+```
+Encode every GT crop with CLIP. Cluster with KMeans. B2 crops that CLIP assigns to B3 cluster → flag as potential mislabel. Soft-label or drop the most ambiguous.
+
+#### T4-C: Drop Ambiguous B2/B3 Training Samples
+Identify images with co-occurring B2+B3 in close proximity (annotation boundary zone). Drop top-N most ambiguous. Smaller but cleaner dataset.
+
+#### T4-D: Two-Stage Pipeline (Detector + Classifier)
+History shows single-class detector reaches mAP50-95=0.389 (vs multi-class 0.260).
+1. Create `Dataset-SingleClass/` — all labels as class 0
+2. Train YOLOv9c single-class → `stage1_best.pt`
+3. Crop all GT boxes → `Dataset-Crops/B1/ B2/ B3/ B4/`
+4. Train EfficientNet-B0 or DINOv2-based classifier on crops
+5. `two_stage_eval.py` → compute combined pipeline mAP
+
+#### T4-E: Pseudo-Labeling Test Set
+Run current best model on test set (624 images, unlabeled). High-confidence predictions (conf>0.7) → pseudo-labels. Add to training set. Retrain.
+
+---
+
+### TIER 5 — MOST RADICAL
+
+#### T5-A: Write Custom YOLO Training Loop from Scratch
+Bypass Ultralytics entirely. Write a clean PyTorch training loop with:
+- Custom focal loss per class with different γ for B1/B2/B3/B4
+- Custom sampler that ensures each batch has balanced B2/B4 examples
+- Contrastive auxiliary head baked in from epoch 1
+- EMA teacher for pseudo-labeling baked in
+This gives full control over every loss term and gradient.
+
+#### T5-B: Knowledge Distillation from Ensemble Teacher
+Train 3 different model configs (YOLOv9c, RT-DETR, YOLOv9c+CBAM).
+Average their soft output probabilities as teacher targets.
+Train a clean YOLOv9c student using these soft labels.
+Soft labels encode inter-class similarity (B2 "softly" overlaps B3) → better calibration.
+
+#### T5-C: Style Transfer for Domain Augmentation (Damimas → Lonsum)
+Damimas has 2764 train images. Lonsum has only ~276.
+Use AdaIN style transfer to generate Lonsum-style versions of Damimas images.
+This helps model generalize across the two varieties.
+```bash
+pip install stylegan3  # or use simple AdaIN implementation
+```
+
+#### T5-D: GroundingDINO Auto-Annotation for New Data
+```bash
+pip install groundingdino-py
+```
+Text prompts: "oil palm fruit bunch", "ripe palm fruit", "unripe palm fruit"
+Auto-annotate any unlabeled images. Can generate 500-1000 new pseudo-labeled training images.
+
+---
+
+### Implementation Priority Order (evidence-based)
+
+1. **T4-A Tiled Dataset** — fastest to implement, directly addresses B4 (mAP 0.140)
+2. **T2-A P2 Head** — strongest architecture evidence for small objects
+3. **T3-C Label Smoothing** — trivial 1-line change, should always be on
+4. **T3-A Contrastive Loss** — directly addresses B2/B3 root cause
+5. **T2-C RF-DETR** — pip install + train, DINOv2 backbone may break ceiling
+6. **T1-A RGB-D** — novel, untested, potentially big if depth helps discrimination
+7. **T4-D Two-Stage Pipeline** — proven 0.389 in history, needs implementation
+8. **T3-B EfficientTeacher** — exploit unlabeled test set
+9. **T4-B CLIP Label Cleaning** — address label noise systematically
+10. **T5-A Custom Training Loop** — maximum control, highest effort
 
 ---
 
