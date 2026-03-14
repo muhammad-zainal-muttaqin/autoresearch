@@ -27,6 +27,7 @@ followup.log
 # Local datasets and downloaded pretrained checkpoints
 Dataset-YOLO/
 Dataset-Sawit-YOLO-HF/
+Dataset-*/
 *.pt
 
 # YOLO training outputs
