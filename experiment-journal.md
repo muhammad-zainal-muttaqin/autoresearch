@@ -47,3 +47,71 @@
 
 **Falsification**: If B4 mAP doesn't improve despite more B4 training data, then the bottleneck is not data quantity but rather B4's inherent difficulty (small size, low contrast). In that case, try tiled dataset.
 
+**Result**: val_map50_95=0.247590 (delta=-0.012290 from best 0.259880) — DISCARD
+
+**Per-class**:
+- B1: mAP50-95=0.423 (slightly worse)
+- B2: mAP50-95=0.196 (no change)
+- B3: mAP50-95=0.248 (worse, was 0.264)
+- B4: mAP50-95=0.123 (worse, was 0.140)
+
+**Analysis**: Class-balanced oversampling hurt performance on all classes. The reasons:
+1. Oversampling with simple flips creates duplicate-like images — not genuinely diverse. The model sees "more data" but it's almost the same data.
+2. The training dataset went from 2764→6367 images, but within the 20-min time budget, this means fewer epochs (fewer passes through the full diversity), potentially underfitting.
+3. B3 also increased 2.3x in absolute count, so the "balance" improvement is real but offset by less epochs.
+4. Flipped copies of B4 images don't help because B4's challenge is small object size, not orientation.
+
+**Falsification confirmed**: Oversampling B1/B4 with geometric augmentation does NOT help. B4's bottleneck is NOT data quantity at standard resolution.
+
+**Key insight**: The balanced dataset approach failed because:
+- Geometric flips are not meaningful augmentation for these objects
+- Doubling dataset size with similar images reduces effective epochs in time budget
+- B4 needs better RESOLUTION, not more images
+
+**Next**: Try model soup/weight averaging OR label noise correction OR try YOLOv9e (bigger model).
+
+---
+
+## Experiment 4 — 2026-03-14 (Label Noise Correction)
+
+**Hypothesis**: If high-confidence model predictions that disagree with labels (especially B2/B3 confusion) are used to correct those labels, then B2 mAP50-95 will increase because the model is no longer penalized for correctly predicting B3 on mislabeled-as-B2 instances. B2 mAP at 0.197 is the strongest bottleneck.
+
+**Approach**:
+1. Load best model (runs/autoresearch/train/weights/best.pt)
+2. Run inference on training images with conf=0.1 (to catch all detections)
+3. For each detection with conf>0.75 that predicts a DIFFERENT class than the label:
+   - Focus on B2/B3 mismatches (most common: 208 B2→B3 cases)
+   - IoU match between predicted box and labeled box
+   - If IoU>0.5 and conf>0.75, flag as potential mislabel
+4. Correct top-N most confident mismatches
+5. Save Dataset-Cleaned/ and retrain
+
+**Expected success criterion**: B2 mAP50-95 > 0.22 OR val_map50_95 > 0.265
+
+**Falsification**: If label noise correction doesn't help B2, then the B2/B3 confusion may not be label noise but instead inherent visual ambiguity that the model cannot resolve.
+
+**INVESTIGATION RESULT (pre-experiment)**:
+- Ran inference on 200 training images at different confidence thresholds
+- conf>=0.5: 21 B2/B3 mismatches (extrapolating: ~290 total in full train set)
+- conf>=0.7: 0 corrections (model not confident enough to correct labels)
+- **Conclusion**: The model cannot confidently identify mislabeled examples. At conf>=0.5, the model may itself be wrong about B2/B3 — using these to "correct" labels would introduce new errors.
+- **Decision**: Label noise correction via model prediction is not safe at this accuracy level. Need a more confident oracle or different approach.
+
+**Abandoning Experiment 4 (label correction)**. Moving to Experiment 5: YOLOv9e (larger model).
+
+---
+
+## Experiment 5 — 2026-03-14 (YOLOv9e larger model)
+
+**Hypothesis**: If YOLOv9e (larger model than YOLOv9c) is used with imgsz=1024 and batch=4, then B2/B3 discrimination will improve because the larger model has more capacity for fine-grained feature learning, and the self-attention-like mechanisms in the larger ELAN blocks can capture more context for B2/B3 disambiguation.
+
+**Change**: MODEL=yolov9c.pt→yolov9e.pt, BATCH=8→4
+
+**Expected success criterion**: val_map50_95 > 0.265 OR B2 mAP50-95 > 0.21
+
+**Falsification**: If YOLOv9e doesn't improve over YOLOv9c, then model capacity is not the bottleneck. The problem is in the data quality/distribution, not model expressiveness.
+
+
+
+
+

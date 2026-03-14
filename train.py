@@ -20,7 +20,7 @@ from prepare import (
 )
 
 # ── Model ────────────────────────────────────────────────────────────────────
-MODEL = "yolov9c.pt"
+MODEL = "yolov9e.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
 TIME_HOURS = 0.33  # ~20 minutes max per iteration
@@ -37,7 +37,7 @@ WARMUP_EPOCHS = 3.0
 COS_LR = True
 
 # ── Batch & image ────────────────────────────────────────────────────────────
-BATCH = 8
+BATCH = 4
 IMGSZ = 1024
 
 # ── Augmentation ─────────────────────────────────────────────────────────────
