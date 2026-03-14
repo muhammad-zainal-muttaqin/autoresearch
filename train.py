@@ -29,16 +29,16 @@ TIME_HOURS = 0.33  # ~20 minutes max per iteration
 EPOCHS = 40
 PATIENCE = 15
 OPTIMIZER = "AdamW"
-LR0 = 0.0005
-LRF = 0.1
+LR0 = 0.001
+LRF = 0.01
 MOMENTUM = 0.937
 WEIGHT_DECAY = 0.0005
 WARMUP_EPOCHS = 3.0
 COS_LR = True
 
 # ── Batch & image ────────────────────────────────────────────────────────────
-BATCH = 8
-IMGSZ = 1024
+BATCH = 16
+IMGSZ = 640
 
 # ── Augmentation ─────────────────────────────────────────────────────────────
 MOSAIC = 1.0

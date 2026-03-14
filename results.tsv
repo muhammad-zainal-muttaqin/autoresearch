@@ -19,3 +19,4 @@ b29a3e4	0.532566	0.254323	0.482366	0.624871	12.1	discard	seed 42 (model soup ste
 d28bf04	0.532064	0.256517	0.477854	0.632673	12.1	discard	seed 123 (model soup step 2)
 dc4c42d	0.538971	0.260003	0.486167	0.632960	12.1	keep	seed 0 retrain (new best!)
 baeefdc	0.538971	0.260003	0.486167	0.632960	12.1	discard	model soup 3-seed (no improvement from averaging)
+40e710b	0.534087	0.258165	0.489487	0.615233	12.1	discard	lr0 0.0005 lrf 0.1
