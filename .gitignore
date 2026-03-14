@@ -29,6 +29,16 @@ Dataset-YOLO/
 Dataset-Sawit-YOLO-HF/
 Dataset-*/
 *.pt
+*.pth
+*.pth.tar
+soup_*.pt
+stage*.pt
+stage*.pth
+model_soup*.pt
+rfdetr_output/
+classifier_run.log
+two_stage_run.log
+soup_run.log
 
 # YOLO training outputs
 runs/
