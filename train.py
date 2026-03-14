@@ -47,9 +47,9 @@ COPY_PASTE = 0.0
 HSV_H = 0.015
 HSV_S = 0.7
 HSV_V = 0.4
-DEGREES = 5.0
+DEGREES = 0.0
 TRANSLATE = 0.1
-SCALE = 0.7
+SCALE = 0.5
 SHEAR = 0.0
 PERSPECTIVE = 0.0
 FLIPUD = 0.0
@@ -65,7 +65,7 @@ DFL = 1.5
 # ── Misc ─────────────────────────────────────────────────────────────────────
 FREEZE = None  # e.g. 10 to freeze first 10 layers
 AMP = True
-SEED = 0
+SEED = 42
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Training — do not change anything below this line
