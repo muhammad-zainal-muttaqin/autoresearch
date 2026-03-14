@@ -65,7 +65,7 @@ DFL = 1.5
 # ── Misc ─────────────────────────────────────────────────────────────────────
 FREEZE = None  # e.g. 10 to freeze first 10 layers
 AMP = True
-SEED = 42
+SEED = 123
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Training — do not change anything below this line
