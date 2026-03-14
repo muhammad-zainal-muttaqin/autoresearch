@@ -147,6 +147,84 @@
 
 **Falsification**: If RT-DETR doesn't improve B2/B3 disambiguation, then self-attention is not what's needed — the problem is that B2 and B3 look genuinely similar regardless of model architecture, and only better labels or more data can solve it.
 
+**Result**: val_map50_95=0.137608 — DISCARD (RT-DETR did not converge well in 20 min)
+
+---
+
+## Experiment 7 — 2026-03-14 (Two-Stage Pipeline: Single-class Detector + EfficientNet-B0 Classifier)
+
+**Hypothesis**: If we decouple detection (find objects) from classification (label B1-B4), the classifier can focus purely on appearance features within the crop, potentially learning better B2/B3 distinction than end-to-end YOLO.
+
+**Stage 1**: Single-class TBS detector — all classes mapped to class 0. Result: mAP50-95=0.390 (validation, single class = much easier task).
+
+**Stage 2**: EfficientNet-B0 on GT crops from Dataset-Crops. Best val_acc=62.74%, B2=46.6% (near random for binary B2/B3 choice).
+
+**Pipeline evaluation**: mAP50=0.359, mAP50-95≈0.169 — DISCARD
+
+**Analysis**: The classifier bottleneck (B2=46.6% accuracy) was worse than expected. Even a perfect single-class detector cannot rescue us if the downstream classifier can't distinguish B2/B3. The core visual ambiguity remains unsolved. The combined pipeline is worse than end-to-end YOLO (0.169 vs 0.260).
+
+**Key finding**: B2/B3 visual ambiguity is fundamental. Even with isolated crops and a dedicated classifier trained on GT crops, B2 accuracy is only 46.6% — essentially coin-flip level. This rules out simple architectural approaches.
+
+---
+
+## Experiment 8 — 2026-03-14 (Color HSV Analysis)
+
+**Hypothesis**: Ripeness in oil palm is fundamentally a color signal (green=unripe, red/orange=ripe). A simple HSV rule-based classifier might outperform or provide complementary signal to EfficientNet.
+
+**Investigation (color_classifier.py)**:
+- B1 mean_H=26.6° (ORANGE — unexpected! not green)
+- B2 mean_H=27.3° (nearly identical to B1)
+- B3 mean_H=74.5° (GREEN — backward from expectation!)
+- B4 mean_H=35.7°
+
+**Result**: Color classifier accuracy = 31.6% (worse than EfficientNet's 62.7%)
+
+**Analysis**: The color signal is backwards from intuition. This suggests the dataset labels may be based on a different ripeness stage definition than expected. Or the labeled "B3" bunches in this dataset happen to be photographed in conditions showing more green foliage/canopy. Regardless, color alone is not discriminative.
+
+**Key insight from color analysis**: The B2/B3 problem is NOT solvable by color. The classes are defined by morphological/contextual features beyond simple color histograms.
+
+---
+
+## Experiment 9 — 2026-03-14 (RF-DETR with DINOv2 Backbone)
+
+**Hypothesis**: RF-DETR with DINOv2-windowed-small backbone (pre-trained on large-scale vision data via self-supervised learning) will have better representations for fine-grained visual distinctions, improving B2/B3 disambiguation better than YOLO's supervised-only representations.
+
+**Architecture**: RF-DETR (DINOv2-S-windowed) with deformable attention, 31.87M params.
+
+**Training**: 30 epochs, batch=4, lr=1e-4, early stopping patience=10, Dataset-RFDETR (symlinks).
+
+**Result per epoch**:
+- Best mAP50-95=0.2489 at epoch 4 (COCO-style evaluation)
+- Early stopping triggered at epoch 10 (no improvement for 6+ epochs)
+- mAP50=0.542 at best
+
+**Compared to baseline**: 0.2489 < 0.260003 — DISCARD
+
+**Analysis**:
+1. RF-DETR uses COCO-style mAP evaluation (different from our protocol which evaluates at imgsz=640 using ultralytics). The numbers may not be directly comparable.
+2. Even accounting for evaluation differences, RF-DETR did not exceed baseline.
+3. DINOv2 representations, while powerful for ImageNet-style classification, may not transfer well to aerial/field photography of oil palm bunches.
+4. Training from a generic pre-trained checkpoint (not domain-specific) limits the benefit.
+5. Small batch size (4) and limited epochs due to early stopping may have prevented convergence.
+
+**Key finding**: DINOv2-based RF-DETR is NOT a silver bullet for this domain. Self-supervised pre-training on ImageNet doesn't automatically help with agricultural object detection.
+
+---
+
+## Experiment 10 — PLAN: YOLOv9c with Ordinal Regression / Auxiliary Tasks
+
+**Background**: All approaches so far have failed to exceed 0.260003. The fundamental problem is B2/B3 visual ambiguity. Novel ideas:
+
+1. **Ordinal regression**: B1→B2→B3→B4 is an ordered sequence (ripeness stages). Standard cross-entropy treats them as independent classes. CORAL loss or ordinal encoding could help the model understand the ordering constraint.
+
+2. **Multi-task auxiliary head**: Add an auxiliary "ripeness score" regression head alongside classification. Force the model to predict a continuous ripeness value (B1=0, B2=0.33, B3=0.67, B4=1.0) in addition to discrete class. This ordinal auxiliary loss might structure the feature space better.
+
+3. **Drop ambiguous B2/B3 samples**: Instead of correcting labels, train without B2 samples (or with very high loss weight for B2) to force the model to learn discriminative B2-specific features.
+
+**Next experiment**: Try YOLOv9c with mosaic=0 (pure single-image training) combined with copy-paste augmentation at higher rate. Rationale: mosaic may be creating artificial context boundaries that confuse B2/B3 classification by mixing contexts from different images.
+
+**Alternatively**: Try `copy_paste=0.5` (copy-paste augmentation, which inserts object crops from other images). This can increase B4 instance frequency by copying small B4 objects into other scenes, creating synthetic training examples of B4 at various scales.
+
 
 
 

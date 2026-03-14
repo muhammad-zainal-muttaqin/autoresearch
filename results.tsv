@@ -23,3 +23,4 @@ baeefdc	0.538971	0.260003	0.486167	0.632960	12.1	discard	model soup 3-seed (no i
 4002d5f	0.497541	0.239204	0.476783	0.601509	9.6	discard	tiled dataset 640px training
 fd7f85c	0.835432	0.390430	0.824295	0.744285	12.1	keep	single-class TBS detector stage1 (mAP50=0.835!)
 fd7f85c	0.358712	0.168595	0.824295	0.744285	12.1	discard	two-stage pipeline mAP50-95 approx 0.169
+5de4f7e	0.541700	0.248900	0.000000	0.000000	0.0	discard	rfdetr dinov2 windowed-small backbone (best mAP50-95=0.2489 epoch4)

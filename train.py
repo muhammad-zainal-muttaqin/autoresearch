@@ -20,7 +20,7 @@ from prepare import (
 )
 
 # ── Model ────────────────────────────────────────────────────────────────────
-MODEL = "yolov9c.pt"  # single-class TBS detector (stage 1 of two-stage pipeline)
+MODEL = "yolov9c.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
 TIME_HOURS = 0.33  # ~20 minutes max per iteration
