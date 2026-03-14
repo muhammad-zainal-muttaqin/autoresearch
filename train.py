@@ -23,10 +23,10 @@ from prepare import (
 MODEL = "yolov9c.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
-TIME_HOURS = DEFAULT_TIME_HOURS  # 0.5 = 30 minutes
+TIME_HOURS = 0.33  # ~20 minutes max per iteration
 
 # ── Training hyperparameters ─────────────────────────────────────────────────
-EPOCHS = 100
+EPOCHS = 40
 PATIENCE = 15
 OPTIMIZER = "AdamW"
 LR0 = 0.001
