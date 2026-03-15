@@ -26,7 +26,7 @@ MODEL = "yolo11l.pt"
 TIME_HOURS = 0.33  # ~20 minutes max per iteration
 
 # ── Training hyperparameters ─────────────────────────────────────────────────
-EPOCHS = 40
+EPOCHS = 60
 PATIENCE = 15
 OPTIMIZER = "AdamW"
 LR0 = 0.001

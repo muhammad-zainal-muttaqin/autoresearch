@@ -29,3 +29,5 @@ c3baa42	0.527457	0.255829	0.482502	0.620043	12.1	discard	yolo11m imgsz 1024 batc
 3a557ad	0.555280	0.264147	0.511481	0.628252	12.1	keep	yolo11l imgsz 640 batch 16 NEW BEST! B2=0.210
 3a557ad	0.550217	0.261512	0.497409	0.625898	9.6	discard	yolo11l batch 32 imgsz 640 (batch=16 was better)
 3a557ad	0.552025	0.267224	0.500818	0.624680	9.8	keep	yolo11l batch 16 imgsz 640 train+test BEST! B2=0.216
+0132766	0.260303	0.260303	0.497850	0.619742	12.1	discard	yolo11x batch 16 imgsz 640 train+test (too large)
+0132766	0.553808	0.269252	0.500502	0.626121	9.8	keep	yolo11l epochs 60 batch 16 imgsz 640 train+test NEW BEST!
