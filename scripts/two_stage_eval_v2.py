@@ -8,19 +8,23 @@ Fixes over v1:
 4. Cleaner per-class reporting
 """
 
+import argparse
 import torch
-import torch.nn as nn
 import numpy as np
 from pathlib import Path
 from PIL import Image
-from torchvision import models, transforms
+from torchvision import transforms
 from ultralytics import YOLO
 from prepare import DATA_YAML, CLASS_NAMES
+from stage2_models import (
+    classifier_logits_to_probs,
+    load_stage2_classifier,
+)
 
 DETECTOR_PATH = Path("/workspace/autoresearch/stage1_detector.pt")
 CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_classifier.pth")
-# Also try DINOv2 if available
 DINOV2_CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_dinov2_classifier.pth")
+ORDINAL_CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_dinov2_ordinal_classifier.pth")
 
 DETECTOR_CONF = 0.1
 DETECTOR_IOU = 0.5
@@ -31,51 +35,6 @@ PAD_RATIO = 0.2
 IOU_THRESHOLDS = np.arange(0.5, 1.0, 0.05)  # [0.50, 0.55, ..., 0.95]
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def load_efficientnet_classifier(model_path):
-    model = models.efficientnet_b0(weights=None)
-    in_features = model.classifier[1].in_features
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.3, inplace=True),
-        nn.Linear(in_features, 4),
-    )
-    ckpt = torch.load(str(model_path), map_location=DEVICE, weights_only=False)
-    model.load_state_dict(ckpt["model_state_dict"])
-    model = model.to(DEVICE)
-    model.eval()
-    return model
-
-
-def load_dinov2_classifier(model_path):
-    """Load DINOv2 classifier if available."""
-    try:
-        from transformers import AutoModel
-        class DINOv2Clf(nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.backbone = AutoModel.from_pretrained("facebook/dinov2-base")
-                self.head = nn.Sequential(
-                    nn.Linear(768, 512),
-                    nn.BatchNorm1d(512),
-                    nn.ReLU(),
-                    nn.Dropout(0.3),
-                    nn.Linear(512, 4),
-                )
-            def forward(self, x):
-                out = self.backbone(pixel_values=x)
-                cls_emb = out.last_hidden_state[:, 0, :]
-                return self.head(cls_emb)
-        model = DINOv2Clf()
-        ckpt = torch.load(str(model_path), map_location=DEVICE, weights_only=False)
-        model.load_state_dict(ckpt["model_state_dict"])
-        model = model.to(DEVICE)
-        model.eval()
-        print("Loaded DINOv2 classifier")
-        return model
-    except Exception as e:
-        print(f"Could not load DINOv2 classifier: {e}")
-        return None
 
 
 def read_gt_labels(label_dir, img_stem):
@@ -127,7 +86,18 @@ def compute_ap_101point(recalls, precisions, n_gt):
     return ap
 
 
-def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir):
+def evaluate_pipeline(
+    detector,
+    classifier,
+    classifier_type,
+    val_img_dir,
+    val_lbl_dir,
+    *,
+    detector_conf=DETECTOR_CONF,
+    detector_iou=DETECTOR_IOU,
+    imgsz=IMGSZ,
+    pad_ratio=PAD_RATIO,
+):
     """
     Evaluate two-stage pipeline.
     Computes true mAP50-95 over 10 IoU thresholds.
@@ -158,8 +128,13 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir):
         for gb in gt_boxes:
             all_gt_counts[gb[0]] += 1
 
-        results = detector.predict(str(img_path), imgsz=IMGSZ, conf=DETECTOR_CONF,
-                                   iou=DETECTOR_IOU, verbose=False)
+        results = detector.predict(
+            str(img_path),
+            imgsz=imgsz,
+            conf=detector_conf,
+            iou=detector_iou,
+            verbose=False,
+        )
         if not results or len(results[0].boxes) == 0:
             continue
 
@@ -172,10 +147,10 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir):
             conf_score = float(det.conf[0])
             x1, y1, x2, y2 = det.xyxy[0].tolist()
             w_box, h_box = x2 - x1, y2 - y1
-            cx1 = max(0, int(x1 - w_box * PAD_RATIO))
-            cy1 = max(0, int(y1 - h_box * PAD_RATIO))
-            cx2 = min(img_w, int(x2 + w_box * PAD_RATIO))
-            cy2 = min(img_h, int(y2 + h_box * PAD_RATIO))
+            cx1 = max(0, int(x1 - w_box * pad_ratio))
+            cy1 = max(0, int(y1 - h_box * pad_ratio))
+            cx2 = min(img_w, int(x2 + w_box * pad_ratio))
+            cy2 = min(img_h, int(y2 + h_box * pad_ratio))
             if cx2 - cx1 < 5 or cy2 - cy1 < 5:
                 continue
             crop = img.crop((cx1, cy1, cx2, cy2))
@@ -189,7 +164,7 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir):
         crop_batch = torch.stack(crops).to(DEVICE)
         with torch.no_grad():
             logits = classifier(crop_batch)
-            probs = torch.softmax(logits, dim=1)
+            probs = classifier_logits_to_probs(classifier_type, logits)
             pred_classes = probs.argmax(dim=1).cpu().numpy()
             pred_conf_cls = probs.max(dim=1).values.cpu().numpy()
 
@@ -264,27 +239,56 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir):
     return map50, map50_95, per_class_ap
 
 
+def pick_classifier_path(cli_value: str | None) -> Path:
+    if cli_value:
+        return Path(cli_value)
+    for candidate in (
+        ORDINAL_CLASSIFIER_PATH,
+        DINOV2_CLASSIFIER_PATH,
+        CLASSIFIER_PATH,
+    ):
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError("No stage-2 classifier checkpoint found.")
+
+
 if __name__ == "__main__":
     import os
     from prepare import DATA_YAML
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--detector-path", default=str(DETECTOR_PATH))
+    parser.add_argument("--classifier-path", default=None)
+    parser.add_argument("--det-conf", type=float, default=DETECTOR_CONF)
+    parser.add_argument("--det-iou", type=float, default=DETECTOR_IOU)
+    parser.add_argument("--imgsz", type=int, default=IMGSZ)
+    parser.add_argument("--pad-ratio", type=float, default=PAD_RATIO)
+    args = parser.parse_args()
+
     os.chdir(DATA_YAML.parent)
 
     print("Loading detector...")
-    detector = YOLO(str(DETECTOR_PATH))
+    detector = YOLO(str(Path(args.detector_path)))
 
-    # Try DINOv2 first, fall back to EfficientNet
-    classifier = None
-    if DINOV2_CLASSIFIER_PATH.exists():
-        classifier = load_dinov2_classifier(DINOV2_CLASSIFIER_PATH)
-    if classifier is None:
-        print("Loading EfficientNet classifier...")
-        classifier = load_efficientnet_classifier(CLASSIFIER_PATH)
+    classifier_path = pick_classifier_path(args.classifier_path)
+    print(f"Loading classifier: {classifier_path}")
+    loaded = load_stage2_classifier(classifier_path, DEVICE)
+    print(f"Classifier type: {loaded.classifier_type}")
 
     val_img_dir = DATA_YAML.parent / "images" / "val"
     val_lbl_dir = DATA_YAML.parent / "labels" / "val"
 
     print("\nRunning v2 evaluation...")
     map50, map50_95, per_class_ap = evaluate_pipeline(
-        detector, classifier, val_img_dir, val_lbl_dir)
+        detector,
+        loaded.model,
+        loaded.classifier_type,
+        val_img_dir,
+        val_lbl_dir,
+        detector_conf=args.det_conf,
+        detector_iou=args.det_iou,
+        imgsz=args.imgsz,
+        pad_ratio=args.pad_ratio,
+    )
 
     print(f"\nFINAL: mAP50={map50:.6f}, mAP50-95={map50_95:.6f}")
