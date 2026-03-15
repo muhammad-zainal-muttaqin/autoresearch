@@ -23,8 +23,8 @@ When sources disagree, trust them in this order:
 1. `results.tsv`
 2. `logs/`
 3. `train.py` and `prepare.py`
-4. `research/RESEARCH_MASTER.md`
-5. archived files under `research/archive/` and `scripts/archive/`
+4. `archive/research/RESEARCH_MASTER.md`
+5. other archived files under `archive/`
 
 Rules:
 - New empirical evidence overrides older prose.
@@ -200,12 +200,10 @@ These files matter during normal operation:
   - raw run outputs
 - `progress.png`
   - visual summary regenerated from `results.tsv`
-- `research/RESEARCH_MASTER.md`
+- `archive/research/RESEARCH_MASTER.md`
   - long-form research summary and consolidated history
-- `configs/model_variants.yaml`
-  - archived model variants and references
-- `scripts/toolbox.py`
-  - consolidated helper entrypoint for archived utilities
+- `archive/`
+  - non-default historical material; read only when needed
 
 Default editing policy:
 - For normal experiments, edit `train.py` only.
@@ -251,7 +249,7 @@ git log --oneline -20
 If the task depends on prior deep history, also inspect:
 
 ```powershell
-Get-Content research\RESEARCH_MASTER.md -TotalCount 200
+Get-Content archive\research\RESEARCH_MASTER.md -TotalCount 200
 ```
 
 What you must establish before acting:
@@ -375,7 +373,7 @@ uv run python plot_progress.py
 ```
 
 Optional but recommended:
-- update `research/RESEARCH_MASTER.md` when a branch materially changes belief
+- update `archive/research/RESEARCH_MASTER.md` when a branch materially changes belief
 
 ### Step 8: UPDATE PRIORS
 

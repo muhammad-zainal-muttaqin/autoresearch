@@ -16,7 +16,7 @@ The current project trains and evaluates a detector on 4 classes: `B1`, `B2`, `B
 
 The primary optimization target is `val_map50_95`. Higher is better.
 
-Untuk membaca ringkasan final sesi GPU dan histori penelitian terkonsolidasi, buka `research/RESEARCH_MASTER.md`.
+Untuk membaca ringkasan final sesi GPU dan histori penelitian terkonsolidasi, buka `archive/research/RESEARCH_MASTER.md`.
 
 ## Project Layout
 
@@ -25,12 +25,8 @@ train.py                editable experiment surface
 prepare.py              dataset constants, verification, evaluation
 program.md              agent instructions and experiment protocol
 plot_progress.py        regenerate progress.png from results.tsv
-scripts/toolbox.py      consolidated helper entrypoint for archived utilities
-research/RESEARCH_MASTER.md
-                        consolidated research history and session notes
 logs/                   raw experiment logs moved out of repo root
-configs/model_variants.yaml
-                        combined archived model config variants
+archive/                historical research notes, legacy scripts, archived configs
 pyproject.toml          Python dependencies
 Dataset-YOLO/           canonical local split (gitignored)
   data.yaml             dataset config
@@ -93,7 +89,7 @@ The canonical dataset split used by this repository currently contains `2,764` t
 
 `program.md` describes how an autonomous agent should set up branches, log results, and decide whether to keep or discard a change.
 
-Utility scripts from earlier experiments were consolidated into `scripts/toolbox.py`. Their original standalone sources now live under `scripts/archive/`.
+Legacy helper scripts, research notes, archived model variants, and the analysis notebook now live under `archive/` to keep the repo's live surface small.
 
 ## Training and Metrics
 
@@ -141,4 +137,4 @@ That makes the codebase small enough for fast iteration while keeping evaluation
 
 ## Analysis
 
-Use `analysis.ipynb` to inspect `results.tsv` after several experiments. For the canonical repo thumbnail, regenerate `progress.png` with `uv run python plot_progress.py`; that script labels points from the experiment description rather than the commit hash. The notebook is still useful for ad hoc inspection, and both `results.tsv` and `progress.png` are committed in the default workflow so progress survives pod restarts or eviction.
+Use `archive/analysis.ipynb` to inspect `results.tsv` after several experiments. For the canonical repo thumbnail, regenerate `progress.png` with `uv run python plot_progress.py`; that script labels points from the experiment description rather than the commit hash. The notebook is still useful for ad hoc inspection, and both `results.tsv` and `progress.png` are committed in the default workflow so progress survives pod restarts or eviction.
