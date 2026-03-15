@@ -571,3 +571,18 @@ B4:    2   194  358
 
 **Falsification**: If SupCon doesn't improve binary accuracy over CE, then the B2/B3 ambiguity is not solvable via representation learning — it is inherent label noise, and no classifier will fix it.
 
+
+
+## Experiment 20 — 2026-03-15 15:07 UTC — Label Smoothing 0.1 on yolo11s
+
+**Hypothesis**: label_smoothing=0.1 will reduce overconfident wrong predictions on B2/B3 boundary cases, lifting B2 mAP by penalizing hard labels less.
+
+**Change**: MODEL=yolo11s.pt, label_smoothing=0.1, EPOCHS=40, TIME_HOURS=0.5, Dataset-TrainTest
+
+**Result**: val_map50_95=0.255244 — DISCARD (below yolo11l baseline 0.269424)
+
+**Per-class**: B1=0.430, B2=0.206, B3=0.255, B4=0.129
+
+**Analysis**: yolo11s with label_smoothing reached 0.255 at 57 epochs (time budget expired). This is worse than yolo11l without label_smoothing (0.269). However, we cannot isolate label_smoothing's effect from the model size change (s vs l). B2 at 0.206 — not improved vs baseline 0.216. B4 at 0.129 — worse than baseline 0.152. The smaller model is clearly weaker across all classes. Label smoothing alone cannot compensate for the capacity difference. CONCLUSION: Cannot confirm label smoothing helps without a fair comparison (yolo11l + label_smoothing vs yolo11l baseline). Next step: test label_smoothing on yolo11m to get a fairer signal.
+
+**Next**: Try yolo11m + label_smoothing=0.1 (medium model, 40 epochs) for a fairer comparison vs yolo11l baseline.
