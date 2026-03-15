@@ -1,7 +1,7 @@
 # Logs
 
-Raw log sesi dipindahkan ke folder ini agar root repository tetap ringkas.
+Raw run logs live here so the root stays small while the full training output remains auditable.
 
-- `run.log` sengaja tetap di root untuk kompatibilitas workflow lama.
-- Log training/evaluasi lain diarsipkan di sini.
-- Referensi riset utamanya sekarang ada di `research/RESEARCH_MASTER.md`.
+- The frozen runtime writes timestamped logs here automatically.
+- Keep these files; they are part of the research record.
+- Historical research notes now live under `archive/research/RESEARCH_MASTER.md`.

@@ -1,0 +1,16 @@
+{
+  "next_exp_id": 48,
+  "current_batch_id": 1,
+  "main_best": {
+    "source": "legacy",
+    "exp_id": "",
+    "commit": "d9a3ded",
+    "score": 0.269424,
+    "title": "legacy best 4-class run"
+  },
+  "active_exploration": null,
+  "exploration_best": null,
+  "exploration_miss_streak": 0,
+  "closed_explorations": [],
+  "last_completed_exp": null
+}

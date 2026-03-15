@@ -2,43 +2,34 @@
 
 ![teaser](progress.png)
 
-This repository applies the autoresearch idea to a practical computer vision task: autonomous tuning of a YOLO detector for oil palm fruit bunch images.
+This repository runs Karpathy-style autonomous research for 4-class oil palm fruit bunch detection.
 
-The project trains and evaluates a detector on 4 classes: `B1`, `B2`, `B3`, and `B4`.
+The live surface is intentionally narrow:
+- `train.py` is the editable experiment spec
+- `research.py` is the only second editable file for nontrivial model or pipeline changes
+- `prepare.py` is the frozen evaluator
+- `orchestrator.py` is the frozen runtime and state manager
 
-The live surface is intentionally small:
-- `train.py` is the one experiment surface
-- `prepare.py` is the fixed dataset and evaluation harness
-- `program.md` is the operating brief
-- `results.tsv` is the canonical metric ledger
-- `logs/` keeps full raw outputs for manual inspection
-
-Everything else is telemetry or archive material.
-
-The primary optimization target is `val_map50_95`.
-
-Historical research notes and older assets live under `archive/`.
+The primary decision metric is `val_map50_95`.
 
 ## Live Surface
 
 ```text
-train.py                editable experiment surface
-prepare.py              dataset constants, verification, evaluation
+train.py                editable experiment metadata + config
+research.py             editable research hook for nontrivial changes
+prepare.py              frozen dataset/evaluation harness
+orchestrator.py         frozen runtime, gates, state, logging, batching
 program.md              operating brief
-results.tsv             canonical experiment ledger
+context.md              human steering context
+results.tsv             canonical ledger
+experiments/            machine-managed state, summary, log, reports
+logs/                   raw run logs
 plot_progress.py        regenerate progress.png from results.tsv
 progress.png            visual progress chart
-logs/                   raw experiment logs
 archive/                non-default historical material
 ```
 
 Datasets and generated training outputs under `runs/` are local-only artifacts and should not be committed.
-
-## Requirements
-
-- Python 3.10+
-- `uv`
-- a CUDA-capable NVIDIA GPU
 
 ## Quick Start
 
@@ -48,27 +39,24 @@ uv run prepare.py
 uv run train.py
 ```
 
-Default paths are resolved from the repository root. If the dataset is stored outside the repository, point the code at it with `YOLO_DATASET_DIR`.
+Open the next batch explicitly with:
 
-PowerShell example:
-
-```powershell
-$env:YOLO_DATASET_DIR = "D:\datasets\Dataset-YOLO"
-uv run prepare.py
-uv run train.py
+```bash
+uv run orchestrator.py next-batch
 ```
 
 ## Operating Rules
 
-- edit `train.py` only during normal experimentation
-- treat `prepare.py` as read-only unless there is a confirmed evaluator bug
-- append metrics to `results.tsv` after each completed run
+- edit `train.py` for normal experiments
+- edit `research.py` only when the experiment needs structural changes
+- do not edit `prepare.py` or `orchestrator.py` during normal agent operation
 - keep raw logs in `logs/`
-- keep non-default material in `archive/`
+- treat `results.tsv` as the canonical metric ledger
+- treat `experiments/` as machine-managed memory, not the main experiment surface
 
 ## Dataset Expectations
 
-The dataset must follow standard YOLO directory structure:
+The dataset must follow standard YOLO structure:
 
 ```text
 Dataset-YOLO/
@@ -80,8 +68,6 @@ Dataset-YOLO/
   labels/val
   labels/test
 ```
-
-`prepare.py` validates that each split has both image and label directories before training starts.
 
 ## Analysis
 

@@ -3,16 +3,21 @@
 Mission:
 - maximize `val_map50_95`
 - keep the validation split fixed
-- make decisions from evidence, not guesswork
+- keep the agent's live surface narrow
 
-This repo has one default live experiment file: `train.py`.
+Normal editable files:
+- `train.py`
+- `research.py`
+
+Frozen operational files:
+- `prepare.py`
+- `orchestrator.py`
 
 The contract is simple:
-- edit `train.py`
+- edit `train.py` for metadata and config
+- edit `research.py` only for nontrivial structural changes
 - run `uv run train.py`
-- evaluate through `prepare.py`
-- record the result in `results.tsv`
-- keep the full raw log in `logs/`
+- let `orchestrator.py` handle gates, state, logs, reports, and `results.tsv`
 
 ## Source Of Truth
 
@@ -20,130 +25,94 @@ Trust sources in this order:
 
 1. `results.tsv`
 2. `logs/`
-3. `train.py` and `prepare.py`
-4. `archive/research/RESEARCH_MASTER.md`
-5. other files in `archive/`
+3. `experiments/summary.md` and `experiments/log.md`
+4. `train.py`, `research.py`, `prepare.py`, `orchestrator.py`
+5. `archive/`
 
 If prose disagrees with telemetry, telemetry wins.
 
 ## Current Facts
 
+- decision metric: `val_map50_95`
 - canonical split: train `2764`, val `604`, test `624`
-- standard training set for current comparable runs: `Dataset-TrainTest`
-- best validated 4-class result in `results.tsv`: `0.269424`
-- single-class detector reached `0.390430`
-- main ceiling is class discrimination, especially `B2/B3`
+- standard comparable dataset path is frozen in `prepare.py`
+- best validated 4-class legacy result: `0.269424`
+- main ceiling remains `B2/B3` discrimination
 
 Closed branches:
 - long brute-force one-stage training
 - crop-only two-stage pipelines
 - tiled training as previously implemented
 - label smoothing as a standalone fix
-- small hyperparameter retuning of closed branches
+- small knob-turning on already closed branches
 
 ## Hard Rules
 
-1. Edit `train.py` only during normal experimentation.
-2. Treat `prepare.py` as fixed unless there is a confirmed evaluator bug.
-3. Every run must have a falsifiable hypothesis.
-4. Default budget is short: `TIME_HOURS <= 0.5`, `EPOCHS <= 40`.
-5. Do not repeat closed branches through cosmetic variants.
+1. Every run must have a title, hypothesis, and success criterion in `train.py`.
+2. Normal experiments should only edit `train.py`.
+3. Structural experiments may edit `research.py`; that automatically becomes an exploration track unless `TRACK_HINT` says otherwise.
+4. `prepare.py` and `orchestrator.py` are frozen during normal operation.
+5. Default search budget remains short: `TIME_HOURS <= 0.5`, `EPOCHS <= 40`.
 6. Do not change the validation split.
 7. Do not report approximated `mAP50-95`.
-8. Record failures honestly.
-9. Keep raw logs under `logs/`; do not delete them after summarizing.
-10. If `program.md` disagrees with `results.tsv`, fix `program.md`.
+8. Infrastructure failures are logged, but they do not change scientific conclusions.
+9. Keep raw logs in `logs/`; do not delete them after summarizing.
+10. If this file conflicts with `results.tsv`, update this file.
 
-## Operating Loop
+## Track Semantics
+
+- `train.py` changed, `research.py` clean -> `main`
+- `research.py` changed -> `exploration`
+- `train.py` + `research.py` changed -> `exploration`
+- `TRACK_HINT` may override auto-classification only when necessary
+
+There may be at most one active exploration branch.
+
+## Runtime Loop
 
 ```text
 SYNC -> OBSERVE -> HYPOTHESIZE -> EDIT -> RUN -> ANALYZE -> RECORD -> SYNC
 ```
 
-Never skip `ANALYZE`.
-Never move to the next experiment before deciding what the current run taught you.
+What the runtime does automatically:
+- syntax/import gate
+- dataset verification
+- smoke gate with a dummy forward pass
+- track classification
+- append `results.tsv`
+- append `experiments/log.md`
+- regenerate `experiments/summary.md`
+- regenerate current batch report
 
-## Operating Procedure
+What the agent still does:
+- decide what to try
+- write a falsifiable hypothesis
+- interpret the result
+- choose the next step
 
-### 1. Sync
+## Commands
 
-```powershell
-git status --short
-git pull --ff-only
-Get-Content results.tsv | Select-Object -Last 20
-git log --oneline -20
-```
-
-Read `archive/research/RESEARCH_MASTER.md` only if you need older context.
-
-### 2. Observe
-
-Before changing anything, answer:
-- what is the current comparable score to beat?
-- is this idea already in `results.tsv`?
-- does this idea attack the actual bottleneck?
-- does this idea preserve the fixed evaluation setup?
-
-### 3. Hypothesize
-
-Write a hypothesis in this form:
-
-> If I change X, then Y should improve because Z.
-
-If you cannot state the mechanism, do not run it.
-
-### 4. Edit
-
-Normal case:
-- edit constants at the top of `train.py`
-
-Exception case:
-- only when a human explicitly asks for a new formulation, create new files
-- keep evaluation compatible with `prepare.py`
-
-### 5. Run
+Run one experiment:
 
 ```powershell
-uv run train.py 2>&1 | Tee-Object -FilePath logs\<timestamp>_<slug>.log
+uv run train.py
 ```
 
-### 6. Analyze
+Advance to the next batch:
 
-After the run, answer:
-- did `val_map50_95` improve?
-- did the result beat the right baseline?
-- which class moved?
-- was the result consistent with the hypothesis?
-- should this branch stay open or close?
+```powershell
+uv run orchestrator.py next-batch
+```
 
-### 7. Record
-
-Mandatory:
-- append a row to `results.tsv`
-- keep the full log in `logs/`
-- regenerate `progress.png` when the run belongs on the chart
+Regenerate the chart:
 
 ```powershell
 uv run python plot_progress.py
 ```
 
-### 8. Sync
+## Defaults
 
-```powershell
-git add -A
-git commit -m "telemetry: <short summary>"
-git push
-```
-
-## Default Behavior
-
-Do:
-- make one coherent change
-- run a short comparable experiment
-- update beliefs from evidence
-
-Do not:
-- search randomly
-- chase tiny gains by knob turning
-- reopen closed branches without a real reason
-- hide failures
+- decision status in v1 is machine-provisional only: `keep`, `discard`, `infra_fail`, `crash`
+- `PARK` and manual override are deferred to v2
+- group experiments are deferred to v2
+- `context.md` is the only human steering file

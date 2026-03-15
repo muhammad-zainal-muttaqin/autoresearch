@@ -10,7 +10,7 @@ import pandas as pd
 
 RESULTS_PATH = Path("results.tsv")
 OUTPUT_PATH = Path("progress.png")
-EXPECTED_COLUMNS = [
+REQUIRED_COLUMNS = [
     "commit",
     "val_map50",
     "val_map50_95",
@@ -18,17 +18,18 @@ EXPECTED_COLUMNS = [
     "recall",
     "memory_gb",
     "status",
-    "description",
 ]
 
 
 def human_label(row: pd.Series) -> str:
-    description = str(row.get("description", "") or "").strip()
-    if not description:
-        description = f"{row['status']} run"
+    label = str(row.get("title", "") or "").strip()
+    if not label:
+        label = str(row.get("description", "") or "").strip()
+    if not label:
+        label = f"{row['status']} run"
 
-    description = description.replace("_", " ")
-    return " ".join(textwrap.wrap(description, width=28)) or description
+    label = label.replace("_", " ")
+    return " ".join(textwrap.wrap(label, width=28)) or label
 
 
 def main() -> None:
@@ -36,7 +37,7 @@ def main() -> None:
         raise FileNotFoundError(f"{RESULTS_PATH} not found")
 
     df = pd.read_csv(RESULTS_PATH, sep="\t")
-    missing = [column for column in EXPECTED_COLUMNS if column not in df.columns]
+    missing = [column for column in REQUIRED_COLUMNS if column not in df.columns]
     if missing:
         raise ValueError(f"results.tsv missing columns: {missing}")
 
@@ -44,8 +45,14 @@ def main() -> None:
         print("results.tsv only contains the header so far.")
         return
 
+    if "description" not in df.columns:
+        df["description"] = ""
+    if "title" not in df.columns:
+        df["title"] = ""
+
     df["status"] = df["status"].fillna("").astype(str).str.strip().str.lower()
     df["description"] = df["description"].fillna("").astype(str).str.strip()
+    df["title"] = df["title"].fillna("").astype(str).str.strip()
     df["val_map50_95"] = pd.to_numeric(df["val_map50_95"], errors="coerce").fillna(0.0)
     df["iteration"] = range(1, len(df) + 1)
 
@@ -64,7 +71,7 @@ def main() -> None:
             color="#cfcfcf",
             alpha=0.8,
             edgecolors="none",
-            label="Discarded",
+            label="Discarded / infra",
             zorder=1,
         )
 
