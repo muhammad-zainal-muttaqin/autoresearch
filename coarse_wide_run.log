@@ -17,3 +17,12 @@ Epoch   1/40 | train_loss=0.6791 | train_acc=60.6% | val_loss=0.8735 | val_acc=5
 Epoch   2/40 | train_loss=0.5906 | train_acc=65.4% | val_loss=0.6277 | val_acc=71.1% | B1=86.7% B23=71.7% B4=60.8% | lr=9.94e-04 | 67s elapsed
   *** Saved best model (val_acc=71.14%) ***
 Epoch   3/40 | train_loss=0.5567 | train_acc=67.8% | val_loss=0.7106 | val_acc=64.9% | B1=80.1% B23=55.9% B4=87.7% | lr=9.86e-04 | 137s elapsed
+Epoch   4/40 | train_loss=0.5423 | train_acc=67.8% | val_loss=0.6472 | val_acc=69.6% | B1=87.7% B23=64.7% B4=76.5% | lr=9.76e-04 | 207s elapsed
+Epoch   5/40 | train_loss=0.5227 | train_acc=68.7% | val_loss=0.6312 | val_acc=69.8% | B1=86.0% B23=65.0% B4=77.8% | lr=9.62e-04 | 277s elapsed
+Epoch   6/40 | train_loss=0.5075 | train_acc=69.6% | val_loss=0.7448 | val_acc=64.2% | B1=93.7% B23=56.9% B4=74.0% | lr=9.46e-04 | 347s elapsed
+Epoch   7/40 | train_loss=0.5012 | train_acc=70.3% | val_loss=0.6805 | val_acc=67.6% | B1=90.0% B23=60.3% B4=80.9% | lr=9.26e-04 | 417s elapsed
+Epoch   8/40 | train_loss=0.4813 | train_acc=71.1% | val_loss=0.6092 | val_acc=71.4% | B1=88.4% B23=69.4% B4=68.8% | lr=9.05e-04 | 487s elapsed
+  *** Saved best model (val_acc=71.36%) ***
+Epoch   9/40 | train_loss=0.4777 | train_acc=71.5% | val_loss=0.6029 | val_acc=71.2% | B1=85.0% B23=68.7% B4=72.6% | lr=8.80e-04 | 557s elapsed
+Epoch  10/40 | train_loss=0.4671 | train_acc=72.0% | val_loss=0.7323 | val_acc=65.6% | B1=90.4% B23=57.5% B4=80.7% | lr=8.54e-04 | 627s elapsed
+Epoch  11/40 | train_loss=0.4561 | train_acc=72.9% | val_loss=0.6934 | val_acc=67.3% | B1=89.7% B23=59.5% B4=82.3% | lr=8.25e-04 | 697s elapsed
