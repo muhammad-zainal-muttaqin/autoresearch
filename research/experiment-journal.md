@@ -586,3 +586,41 @@ B4:    2   194  358
 **Analysis**: yolo11s with label_smoothing reached 0.255 at 57 epochs (time budget expired). This is worse than yolo11l without label_smoothing (0.269). However, we cannot isolate label_smoothing's effect from the model size change (s vs l). B2 at 0.206 — not improved vs baseline 0.216. B4 at 0.129 — worse than baseline 0.152. The smaller model is clearly weaker across all classes. Label smoothing alone cannot compensate for the capacity difference. CONCLUSION: Cannot confirm label smoothing helps without a fair comparison (yolo11l + label_smoothing vs yolo11l baseline). Next step: test label_smoothing on yolo11m to get a fairer signal.
 
 **Next**: Try yolo11m + label_smoothing=0.1 (medium model, 40 epochs) for a fairer comparison vs yolo11l baseline.
+
+
+## Experiment 21 — 2026-03-15 ~17:10 UTC — yolo11m + Label Smoothing 0.1
+
+**Hypothesis**: If yolo11m is trained with label_smoothing=0.1, then val_map50_95 will exceed a typical yolo11m baseline (~0.250-0.265 range) because label smoothing reduces overconfident wrong predictions on the B2/B3 boundary. This is a controlled test isolating label_smoothing from model size effects — we compare yolo11m+smoothing against expected yolo11m range rather than yolo11l which is a different model.
+
+**Mechanism**: Soft labels prevent the model from memorizing noise at the B2/B3 boundary. Instead of penalizing P(B3)=0 for a mislabeled B2 box with absolute CE loss, label smoothing gives a target of P(B2)=0.9, P(B3)=0.025 — the gradient is smaller, making the model more robust to annotation noise.
+
+**Change**: MODEL=yolo11m.pt, label_smoothing=0.1, EPOCHS=40, TIME_HOURS=0.5
+
+**Success criterion**: val_map50_95 > 0.260 (beats yolo11s baseline +smoothing of 0.255, shows medium model benefits from smoothing)
+
+**Falsification**: If yolo11m+smoothing ≤ 0.255 (same as yolo11s), then label smoothing provides no additional benefit on medium model and the approach should be abandoned.
+
+**UPDATE**: ABANDONED before running. Per researcher directive, parameter tweaks (label smoothing, model size changes) cannot give 5-15% improvement needed. Pivoting to fundamentally different approach: wide-context crops for hierarchical classifier.
+
+
+## Experiment 22 — 2026-03-15 ~17:15 UTC — Wide-Context Hierarchical Pipeline (PAD_RATIO=0.6)
+
+**Observation**: ALL previous two-stage classifiers used PAD_RATIO=0.2 (tight 20% padding around each bounding box). The B2/B3 distinction in oil palm ripeness may depend on SURROUNDING CONTEXT: adjacent bunches, stem connection, leaves — features that are cut off by tight crops.
+
+**Hypothesis**: If stage-2 classifiers are trained on WIDER crops (PAD_RATIO=0.6 = 3x more context), the model can see the fruit neighborhood which may be discriminative for B2 vs B3 ripeness. Wide crops show: the same bunch + 60% of its width/height as border context = surrounding fruits, stems, foliage that may encode ripeness-stage information. This is fundamentally different from all prior narrow-crop attempts.
+
+**Design (hierarchical two-stage)**:
+- Dataset-Crops-Wide: PAD_RATIO=0.6 (already built)
+- Train coarse 3-class (B1/B23/B4) on Dataset-Crops-Wide-Coarse3
+- Train binary specialist (B2/B3) on Dataset-Crops-Wide-B23
+- Evaluate hierarchical pipeline
+
+**Gate criteria**:
+- Coarse classifier must reach >78% val_acc within 20 epochs, else kill
+- Binary specialist must reach >75% val_acc within 20 epochs, else kill
+- End-to-end mAP50-95 must > 0.240 else kill the two-stage branch permanently
+
+**Success criterion**: val_map50_95 > 0.269424 (beat one-stage baseline)
+**Falsification**: If wide context doesn't improve B2/B3 discrimination, then the problem is inherent label ambiguity that no spatial context can solve.
+
+
