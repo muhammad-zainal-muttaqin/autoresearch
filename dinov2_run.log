@@ -1,0 +1,86 @@
+Device: cuda
+Crop directory: /workspace/autoresearch/Dataset-Crops
+
+Dataset sizes: train=12360, val=2786
+
+Building DINOv2 classifier...
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 5475.72it/s]
+  Total params: 87.0M | Trainable: 0.4M
+
+Computing class weights...
+  Class counts: {'B1': 1540, 'B2': 2844, 'B3': 5633, 'B4': 2343}
+  Class weights: ['2.006', '1.086', '0.549', '1.319']
+
+Training for up to 50 epochs (2.0h budget)...
+Epoch   1/50 | train_acc=49.8% | val_acc=54.5% | B1=86.4% B2=37.4% B3=50.6% B4=65.2% | lr=9.99e-04 | 0s elapsed
+  *** Saved best model (val_acc=54.49%) ***
+Epoch   2/50 | train_acc=54.7% | val_acc=53.0% | B1=86.4% B2=52.6% B3=37.4% B4=72.6% | lr=9.96e-04 | 67s elapsed
+Epoch   3/50 | train_acc=55.4% | val_acc=50.3% | B1=96.0% B2=45.6% B3=39.9% B4=55.4% | lr=9.91e-04 | 136s elapsed
+Epoch   4/50 | train_acc=56.9% | val_acc=53.3% | B1=87.7% B2=66.7% B3=35.7% B4=61.7% | lr=9.84e-04 | 206s elapsed
+Epoch   5/50 | train_acc=57.2% | val_acc=54.6% | B1=85.7% B2=60.3% B3=41.7% B4=62.3% | lr=9.76e-04 | 277s elapsed
+  *** Saved best model (val_acc=54.63%) ***
+Epoch   6/50 | train_acc=57.6% | val_acc=54.8% | B1=86.0% B2=49.7% B3=40.8% B4=77.1% | lr=9.65e-04 | 348s elapsed
+  *** Saved best model (val_acc=54.85%) ***
+Epoch   7/50 | train_acc=59.2% | val_acc=56.1% | B1=79.1% B2=48.5% B3=45.9% B4=76.0% | lr=9.52e-04 | 419s elapsed
+  *** Saved best model (val_acc=56.07%) ***
+Epoch   8/50 | train_acc=59.3% | val_acc=53.6% | B1=90.0% B2=50.7% B3=39.7% B4=70.0% | lr=9.38e-04 | 491s elapsed
+Epoch   9/50 | train_acc=59.9% | val_acc=56.2% | B1=87.4% B2=54.9% B3=49.1% B4=57.9% | lr=9.22e-04 | 561s elapsed
+  *** Saved best model (val_acc=56.25%) ***
+Epoch  10/50 | train_acc=60.3% | val_acc=58.4% | B1=82.7% B2=50.8% B3=55.3% B4=60.8% | lr=9.05e-04 | 632s elapsed
+  *** Saved best model (val_acc=58.40%) ***
+Epoch  11/50 | train_acc=61.2% | val_acc=55.5% | B1=86.0% B2=59.8% B3=44.4% B4=60.6% | lr=8.85e-04 | 704s elapsed
+Epoch  12/50 | train_acc=62.0% | val_acc=56.5% | B1=89.7% B2=42.8% B3=53.5% B4=60.8% | lr=8.65e-04 | 774s elapsed
+Epoch  13/50 | train_acc=61.9% | val_acc=54.0% | B1=87.7% B2=42.5% B3=45.4% B4=68.8% | lr=8.42e-04 | 844s elapsed
+Epoch  14/50 | train_acc=61.7% | val_acc=55.2% | B1=90.7% B2=45.4% B3=45.4% B4=69.9% | lr=8.19e-04 | 915s elapsed
+Epoch  15/50 | train_acc=63.7% | val_acc=56.0% | B1=88.0% B2=42.3% B3=48.1% B4=72.4% | lr=7.94e-04 | 985s elapsed
+Epoch  16/50 | train_acc=63.2% | val_acc=54.6% | B1=87.7% B2=43.8% B3=44.5% B4=72.6% | lr=7.68e-04 | 1056s elapsed
+Epoch  17/50 | train_acc=64.3% | val_acc=51.8% | B1=87.4% B2=57.5% B3=32.3% B4=72.4% | lr=7.41e-04 | 1126s elapsed
+Epoch  18/50 | train_acc=64.9% | val_acc=56.8% | B1=91.0% B2=44.9% B3=52.5% B4=61.4% | lr=7.13e-04 | 1197s elapsed
+Epoch  19/50 | train_acc=65.8% | val_acc=56.7% | B1=84.4% B2=54.9% B3=45.8% B4=69.5% | lr=6.84e-04 | 1267s elapsed
+Epoch  20/50 | train_acc=66.3% | val_acc=55.3% | B1=85.0% B2=56.5% B3=44.6% B4=63.4% | lr=6.55e-04 | 1338s elapsed
+Epoch  21/50 | train_acc=67.4% | val_acc=58.3% | B1=84.7% B2=46.2% B3=54.3% B4=67.0% | lr=6.25e-04 | 1408s elapsed
+Epoch  22/50 | train_acc=67.3% | val_acc=55.8% | B1=81.7% B2=58.0% B3=42.2% B4=71.5% | lr=5.94e-04 | 1479s elapsed
+Epoch  23/50 | train_acc=67.8% | val_acc=59.2% | B1=89.0% B2=45.9% B3=57.8% B4=60.6% | lr=5.63e-04 | 1549s elapsed
+  *** Saved best model (val_acc=59.15%) ***
+Epoch  24/50 | train_acc=69.4% | val_acc=58.1% | B1=86.4% B2=43.3% B3=54.2% B4=68.2% | lr=5.32e-04 | 1620s elapsed
+Epoch  25/50 | train_acc=69.4% | val_acc=57.4% | B1=82.7% B2=57.4% B3=48.7% B4=64.3% | lr=5.00e-04 | 1691s elapsed
+Epoch  26/50 | train_acc=69.2% | val_acc=56.0% | B1=85.7% B2=56.4% B3=47.5% B4=59.4% | lr=4.69e-04 | 1761s elapsed
+Epoch  27/50 | train_acc=70.5% | val_acc=54.5% | B1=84.4% B2=61.8% B3=40.2% B4=64.4% | lr=4.38e-04 | 1832s elapsed
+Epoch  28/50 | train_acc=70.4% | val_acc=57.5% | B1=84.7% B2=49.7% B3=50.9% B4=66.8% | lr=4.07e-04 | 1902s elapsed
+Epoch  29/50 | train_acc=71.0% | val_acc=55.6% | B1=81.1% B2=63.2% B3=46.2% B4=55.6% | lr=3.76e-04 | 1972s elapsed
+Epoch  30/50 | train_acc=71.4% | val_acc=57.3% | B1=86.0% B2=48.4% B3=50.9% B4=66.8% | lr=3.46e-04 | 2043s elapsed
+Epoch  31/50 | train_acc=72.2% | val_acc=57.0% | B1=85.0% B2=48.7% B3=50.0% B4=67.9% | lr=3.17e-04 | 2114s elapsed
+Epoch  32/50 | train_acc=72.4% | val_acc=55.4% | B1=85.4% B2=53.8% B3=45.6% B4=64.4% | lr=2.88e-04 | 2184s elapsed
+Epoch  33/50 | train_acc=73.7% | val_acc=55.7% | B1=82.7% B2=53.9% B3=46.2% B4=65.9% | lr=2.60e-04 | 2254s elapsed
+Epoch  34/50 | train_acc=73.5% | val_acc=56.1% | B1=84.1% B2=52.9% B3=47.4% B4=65.2% | lr=2.33e-04 | 2325s elapsed
+Epoch  35/50 | train_acc=73.7% | val_acc=55.3% | B1=86.0% B2=52.0% B3=45.3% B4=66.1% | lr=2.07e-04 | 2395s elapsed
+Epoch  36/50 | train_acc=73.9% | val_acc=55.4% | B1=85.4% B2=47.9% B3=46.7% B4=68.1% | lr=1.82e-04 | 2465s elapsed
+Epoch  37/50 | train_acc=74.4% | val_acc=56.2% | B1=85.4% B2=54.1% B3=47.8% B4=62.8% | lr=1.59e-04 | 2536s elapsed
+Epoch  38/50 | train_acc=75.2% | val_acc=56.1% | B1=86.0% B2=52.5% B3=47.9% B4=63.4% | lr=1.36e-04 | 2606s elapsed
+Epoch  39/50 | train_acc=75.1% | val_acc=56.9% | B1=83.7% B2=49.0% B3=51.5% B4=63.9% | lr=1.16e-04 | 2677s elapsed
+Epoch  40/50 | train_acc=75.2% | val_acc=57.4% | B1=84.7% B2=48.7% B3=52.1% B4=65.0% | lr=9.64e-05 | 2747s elapsed
+Epoch  41/50 | train_acc=75.9% | val_acc=57.0% | B1=82.1% B2=50.7% B3=51.3% B4=64.1% | lr=7.88e-05 | 2818s elapsed
+Epoch  42/50 | train_acc=75.9% | val_acc=56.5% | B1=86.4% B2=51.1% B3=49.8% B4=62.1% | lr=6.28e-05 | 2888s elapsed
+Epoch  43/50 | train_acc=75.8% | val_acc=56.5% | B1=86.0% B2=53.1% B3=49.9% B4=60.1% | lr=4.85e-05 | 2958s elapsed
+Epoch  44/50 | train_acc=75.7% | val_acc=57.3% | B1=85.7% B2=45.9% B3=52.5% B4=65.7% | lr=3.61e-05 | 3029s elapsed
+Epoch  45/50 | train_acc=76.8% | val_acc=56.7% | B1=86.0% B2=49.7% B3=49.4% B4=66.1% | lr=2.54e-05 | 3099s elapsed
+Epoch  46/50 | train_acc=76.0% | val_acc=56.8% | B1=85.0% B2=51.5% B3=49.7% B4=64.3% | lr=1.67e-05 | 3170s elapsed
+Epoch  47/50 | train_acc=75.9% | val_acc=56.5% | B1=85.7% B2=51.5% B3=48.3% B4=65.7% | lr=9.85e-06 | 3240s elapsed
+Epoch  48/50 | train_acc=76.7% | val_acc=56.9% | B1=83.4% B2=52.3% B3=51.0% B4=61.7% | lr=4.94e-06 | 3310s elapsed
+Epoch  49/50 | train_acc=76.8% | val_acc=56.2% | B1=83.1% B2=50.3% B3=48.5% B4=66.4% | lr=1.99e-06 | 3381s elapsed
+Epoch  50/50 | train_acc=76.3% | val_acc=56.0% | B1=83.4% B2=50.7% B3=47.2% B4=67.9% | lr=1.00e-06 | 3451s elapsed
+
+Best val_acc: 59.15% at epoch 23
+DINOv2 classifier saved to /workspace/autoresearch/stage2_dinov2_classifier.pth
+
+Best per-class accuracy:
+  B1: 89.0%
+  B2: 45.9%
+  B3: 57.8%
+  B4: 60.6%
+
+Best confusion matrix (rows=true, cols=pred):
+  B1:  268   24    8    1
+  B2:  100  281  197   34
+  B3:   22  266  763  268
+  B4:    3   25  190  336

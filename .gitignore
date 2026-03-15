@@ -39,6 +39,10 @@ rfdetr_output/
 classifier_run.log
 two_stage_run.log
 soup_run.log
+dinov2_run.log
+dinov2_corn_run.log
+two_stage_dinov2_run.log
+two_stage_dinov2_corn_run.log
 
 # YOLO training outputs
 runs/

@@ -386,3 +386,33 @@
 **Analysis**: DINOv2 did not deliver the hoped-for classifier breakthrough. Overall accuracy improved only modestly in absolute terms and B2 remained weak at 45.9%, meaning the backbone alone does not solve the B2/B3 ambiguity. This falsifies the simple “stronger frozen backbone is enough” hypothesis and justifies moving to ordinal objectives rather than more flat cross-entropy variants.
 
 **Next**: Run corrected two-stage evaluation with the DINOv2 checkpoint for closure, then escalate immediately to the CORN ordinal DINOv2 classifier on GPU.
+
+
+## Experiment 16 — 2026-03-15 11:42 UTC
+
+**Hypothesis**: Even if the standalone DINOv2 classifier is only a modest improvement, plugging it into the full two-stage pipeline might still raise end-to-end mAP50-95 enough to keep the two-stage branch alive.
+
+**Change**: Re-run `scripts/two_stage_eval_v2.py` with `stage1_detector.pt` and the new `stage2_dinov2_classifier.pth` checkpoint.
+
+**Result**: val_map50_95=0.181088 (delta=-0.088336 vs best one-stage 0.269424) — DISCARD
+
+**Per-class**: B1=0.379 B2=0.100 B3=0.166 B4=0.080
+
+**Analysis**: The DINOv2 stage-2 classifier improved the corrected two-stage pipeline only marginally over EfficientNet, from 0.167510 to 0.181088. The key failure mode did not move: B2 remained stuck at 0.100 mean AP50-95, and B3 also regressed relative to the detector ceiling. This closes the plain cross-entropy DINOv2 two-stage branch. A stronger visual backbone alone is not enough; the next idea must change the learning objective or the representation geometry for B2/B3 rather than just swapping classifiers.
+
+**Next**: Evaluate the ordinal CORN DINOv2 classifier as the next objective-level change. If it also fails the classifier gate, stop spending GPU on frozen-backbone stage-2 variants and move to a genuinely different formulation.
+
+
+## Experiment 17 — 2026-03-15 11:42 UTC
+
+**Hypothesis**: Because the labels are ordinal (`B1 < B2 < B3 < B4`) and most confusion is local (`B2 <-> B3`), a CORN objective should shape the classifier decision boundary better than flat cross-entropy and lift B2 accuracy enough to justify another end-to-end two-stage evaluation.
+
+**Change**: Train `scripts/train_dinov2_corn_classifier.py` with the same frozen DINOv2 backbone and a CORN ordinal head on `Dataset-Crops`.
+
+**Result**: val_acc=57.39% at epoch 1, B2=34.6% — DISCARD
+
+**Per-class**: B1=85.4% B2=34.6% B3=57.2% B4=67.7%
+
+**Analysis**: CORN failed the gate decisively. It underperformed the plain DINOv2 classifier overall and collapsed B2 to 34.6%, which is worse than the earlier cross-entropy branch. Some later epochs raised B2 temporarily, but only by trading away B3/B4 and never recovering the best overall validation accuracy. Because the stage-2 gate failed badly, this branch is rejected before full two-stage evaluation; running end-to-end mAP would only waste more time on a weak classifier.
+
+**Next**: Abandon frozen-backbone classification-only tweaks and move to a truly new branch: either metric-learning / contrastive crop supervision for B2/B3 separation or a fine-grained attention model that uses token-level evidence rather than a shallow linear head.
