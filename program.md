@@ -240,6 +240,41 @@ Go back to Step 1. No pause. No confirmation.
 - Need TIME_HOURS=2.0+ to get 100+ epochs and proper convergence
 - AdamW consistently better than SGD for this task
 
+### TWO-STAGE PIPELINE — CONCLUSIVELY FAILED (2026-03-15)
+All two-stage variants tested, all worse than single-stage 0.269:
+- stage1+EfficientNet: 0.1675
+- stage1+DINOv2-CE (flat): 0.1811
+- stage1+DINOv2-CORN (ordinal): 0.1376
+- stage1+DINOv2-CE (hierarchical B1/B23/B4 + binary B2/B3): 0.1776
+- stage1+DINOv2-SupCon (contrastive): training abandoned, no signal
+**CONCLUSION: Do NOT attempt any more two-stage pipeline variants. The B2/B3 boundary is not solvable at the crop level with any classifier. The distinction requires full-image context.**
+
+---
+
+## PERMANENT EXPERIMENT RULES (set by researcher, mandatory for all agents)
+
+### Rule 1 — Keep experiments SHORT
+- **MAX 40 epochs per experiment. TIME_HOURS=0.5.**
+- If the solution is correct, signal is visible within 20-30 epochs.
+- If no clear improvement (>2% absolute) after 20 epochs → kill and move on.
+- NEVER run 80-300 epoch experiments to squeeze 0.01% extra. That is wasted GPU time.
+- We are hunting for experiments that show **5-15% improvement**, not 0.01%.
+
+### Rule 2 — Small or Medium models ONLY
+- Dataset = ~4K images. Large models do NOT generalize better on small datasets.
+- **YOLO: yolo11s.pt or yolo11m.pt ONLY.** Never yolo11l, yolo11x, yolov9e.
+- **RF-DETR: RFDETRSmall only.**
+- **DINOv2: ViT-S (dinov2-small) only.** Not ViT-B or ViT-L.
+- Classifiers: EfficientNet-B0, ResNet-34 — smallest meaningful variant.
+- Rationale: small model trains 2x faster → run 2x more experiments in same time.
+- Scale up ONLY after confirming a working approach with a small model.
+
+### Rule 3 — No wasted iterations
+- Do NOT repeat anything in the "FAILED" list above.
+- Do NOT tweak hyperparameters of failed approaches.
+- Each experiment must test a fundamentally different approach.
+- If an approach has been tried and failed, abandon it entirely.
+
 ---
 
 ## Priority Research Directions (evidence-based + cutting-edge literature 2024-2026)
