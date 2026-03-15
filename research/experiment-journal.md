@@ -371,3 +371,18 @@
 **Analysis**: Long-run one-stage did not validate the time-budget hypothesis. Final val_map50_95=0.257974, best observed during the run was only 0.258, both below the existing 0.269424 baseline. Validation drifted downward after the early peak, so the long-budget one-stage branch is now excluded as a path to 0.40-0.50. The next step is stronger stage-2 classification.
 
 **Next**: Freeze the old one-stage branch and move GPU budget to DINOv2 stage-2 classification, then its ordinal follow-up if B2 remains weak.
+
+
+## Experiment 15 — 2026-03-15 09:24 UTC
+
+**Hypothesis**: If a stronger frozen backbone is the missing ingredient for stage-2 classification, then DINOv2 should beat the previous EfficientNet crop classifier and raise B2/B3 discrimination enough to make two-stage viable.
+
+**Change**: Replace the EfficientNet-B0 crop classifier with a DINOv2-base frozen backbone plus trainable MLP head on Dataset-Crops.
+
+**Result**: val_acc=59.15% at epoch 23 — DISCARD
+
+**Per-class**: B1=89.0% B2=45.9% B3=57.8% B4=60.6%
+
+**Analysis**: DINOv2 did not deliver the hoped-for classifier breakthrough. Overall accuracy improved only modestly in absolute terms and B2 remained weak at 45.9%, meaning the backbone alone does not solve the B2/B3 ambiguity. This falsifies the simple “stronger frozen backbone is enough” hypothesis and justifies moving to ordinal objectives rather than more flat cross-entropy variants.
+
+**Next**: Run corrected two-stage evaluation with the DINOv2 checkpoint for closure, then escalate immediately to the CORN ordinal DINOv2 classifier on GPU.
