@@ -27,3 +27,5 @@ fd7f85c	0.358712	0.168595	0.824295	0.744285	12.1	discard	two-stage pipeline mAP5
 c3baa42	0.514186	0.248169	0.473942	0.620801	12.1	discard	train+test combined 3388 imgs (+22% data, more B2 examples)
 c3baa42	0.527457	0.255829	0.482502	0.620043	12.1	discard	yolo11m imgsz 1024 batch 8 (newer arch, B2 still 0.197)
 3a557ad	0.555280	0.264147	0.511481	0.628252	12.1	keep	yolo11l imgsz 640 batch 16 NEW BEST! B2=0.210
+3a557ad	0.550217	0.261512	0.497409	0.625898	9.6	discard	yolo11l batch 32 imgsz 640 (batch=16 was better)
+3a557ad	0.552025	0.267224	0.500818	0.624680	9.8	keep	yolo11l batch 16 imgsz 640 train+test BEST! B2=0.216
