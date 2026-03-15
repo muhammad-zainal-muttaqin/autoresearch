@@ -624,3 +624,22 @@ B4:    2   194  358
 **Falsification**: If wide context doesn't improve B2/B3 discrimination, then the problem is inherent label ambiguity that no spatial context can solve.
 
 
+
+
+## Experiment 21 — 2026-03-15 15:37 UTC — Wide-Context Hierarchical Pipeline (PAD=0.6) — GATE FAILED
+
+**Hypothesis**: PAD_RATIO=0.6 crops (wider context: fruit + neighborhood) would allow B2/B3 discrimination that is impossible from tight PAD_RATIO=0.2 crops. Coarse B1/B23/B4 classifier should improve from 75.09% (narrow) to >80%.
+
+**Change**: Rebuilt Dataset-Crops-Coarse3 and Dataset-Crops-B23 with PAD_RATIO=0.6. Trained coarse DINOv2 classifier on wide crops.
+
+**Result**: Best val_acc=71.90% at epoch 16/40 — GATE FAILED (gate: 75% by ep20). Training killed at ep17.
+
+**Per-class at best**: B1=86.0%, B23=70.9%, B4=67.5%
+
+**Analysis**: WIDER CONTEXT HURTS, not helps. PAD_RATIO=0.6 coarse classifier peaked at 71.90% vs PAD_RATIO=0.2 which reached 75.09% (40 epochs). The extra context (neighboring fruits, leaves, stems) adds visual noise rather than discriminative signal for the coarse B1/B23/B4 task. B23 accuracy at 70.9% vs 76.5% (narrow) — worse. B4 at 67.5% vs 64.6% (narrow) — slightly better but not enough. The key insight: for COARSE classification (3 classes), tight crops are MORE discriminative. Wider context would need a different architecture (context fusion, not just a larger crop fed to a classification backbone).
+
+**KILL CRITERION MET**: Gate 75% by ep20 not reached. Abandoning all crop-level classification approaches entirely.
+
+**FINAL CONCLUSION on two-stage pipeline**: Every variant tested — flat CE, CORN, SupCon, hierarchical narrow, hierarchical wide — all peak at 71-75% binary/coarse accuracy. The B2/B3 distinction at crop-level, with any context window, is NOT reliably solvable with a frozen DINOv2 + linear head approach. The feature space is simply not separable with this method.
+
+**Next**: RF-DETR end-to-end (highest expected impact: +8-14 mAP pts per research report).
