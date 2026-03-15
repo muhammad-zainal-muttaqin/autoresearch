@@ -416,3 +416,22 @@
 **Analysis**: CORN failed the gate decisively. It underperformed the plain DINOv2 classifier overall and collapsed B2 to 34.6%, which is worse than the earlier cross-entropy branch. Some later epochs raised B2 temporarily, but only by trading away B3/B4 and never recovering the best overall validation accuracy. Because the stage-2 gate failed badly, this branch is rejected before full two-stage evaluation; running end-to-end mAP would only waste more time on a weak classifier.
 
 **Next**: Abandon frozen-backbone classification-only tweaks and move to a truly new branch: either metric-learning / contrastive crop supervision for B2/B3 separation or a fine-grained attention model that uses token-level evidence rather than a shallow linear head.
+
+
+## Experiment 18 — PLAN: Hierarchical Two-Stage Classification
+
+**Observation**: The strongest component in the repo is still the single-class detector (`mAP50-95=0.390430`). Every flat 4-way classifier variant so far has failed at the same point: separating `B2` from `B3` without damaging `B1`/`B4`. That means the pipeline is currently solving an unnecessarily hard problem in one jump.
+
+**Hypothesis**: If stage-2 is decomposed hierarchically into a coarse `B1/B23/B4` classifier plus a dedicated binary `B2/B3` specialist, the coarse classifier can remove the easy decisions from the hard boundary and the binary head can spend all of its capacity on the only ambiguity that matters. This should outperform the flat 4-way classifier even if both sub-models are individually modest.
+
+**Design**:
+- Keep the existing single-class detector as stage 1.
+- Build `Dataset-Crops-Coarse3` with classes `B1`, `B23`, `B4` by merging `B2` and `B3`.
+- Build `Dataset-Crops-B23` with only `B2` and `B3`.
+- Train two new DINOv2 classifiers on those datasets.
+- Evaluate a new hierarchical two-stage pipeline where final probabilities are expanded as:
+  `P(B1)=Pcoarse(B1)`, `P(B2)=Pcoarse(B23)*Pbinary(B2)`, `P(B3)=Pcoarse(B23)*Pbinary(B3)`, `P(B4)=Pcoarse(B4)`.
+
+**Success criterion**: hierarchical end-to-end `val_map50_95 > 0.269424`. A strong signal would be `B2` mean AP50-95 clearly above the current `~0.10` two-stage ceiling.
+
+**Falsification rule**: If the coarse classifier is strong but the binary `B2/B3` specialist still stays near chance, then the ambiguity is not being fixed by decomposition alone and the next branch must change the embedding objective itself (contrastive / prototype-based learning).

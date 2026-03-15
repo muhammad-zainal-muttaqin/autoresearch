@@ -256,21 +256,24 @@ class LoadedClassifier:
     model: nn.Module
     classifier_type: str
     checkpoint: dict
+    class_names: list[str]
 
 
 def load_stage2_classifier(checkpoint_path, device: torch.device) -> LoadedClassifier:
     checkpoint = torch.load(str(checkpoint_path), map_location=device, weights_only=False)
     classifier_type = infer_classifier_type(checkpoint)
     model_name = checkpoint.get("dinov2_model", "facebook/dinov2-base")
+    class_names = list(checkpoint.get("class_names", CLASS_NAMES))
+    n_classes = int(checkpoint.get("n_classes", len(class_names)))
 
     if classifier_type == "efficientnet_b0":
-        model = EfficientNetB0Classifier()
+        model = EfficientNetB0Classifier(n_classes=n_classes)
     elif classifier_type == "dinov2_coral":
-        model = DINOv2OrdinalClassifier(model_name=model_name)
+        model = DINOv2OrdinalClassifier(n_classes=n_classes, model_name=model_name)
     elif classifier_type == "dinov2_corn":
-        model = DINOv2CORNClassifier(model_name=model_name)
+        model = DINOv2CORNClassifier(n_classes=n_classes, model_name=model_name)
     elif classifier_type == "dinov2_ce":
-        model = DINOv2Classifier(model_name=model_name)
+        model = DINOv2Classifier(n_classes=n_classes, model_name=model_name)
     else:
         raise ValueError(f"Unsupported classifier_type: {classifier_type}")
 
@@ -278,4 +281,9 @@ def load_stage2_classifier(checkpoint_path, device: torch.device) -> LoadedClass
     model.load_state_dict(state_dict)
     model = model.to(device)
     model.eval()
-    return LoadedClassifier(model=model, classifier_type=classifier_type, checkpoint=checkpoint)
+    return LoadedClassifier(
+        model=model,
+        classifier_type=classifier_type,
+        checkpoint=checkpoint,
+        class_names=class_names,
+    )
