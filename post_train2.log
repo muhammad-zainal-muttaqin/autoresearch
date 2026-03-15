@@ -1,0 +1,18 @@
+Waiting for python3 train.py (PID 69453)...
+Training process 69453 finished!
+Parsed:
+  val_map50=0.543667
+  val_map50_95=0.257974
+  precision=0.500905
+  recall=0.628034
+  peak_vram_mb=9856.5
+Status: discard (0.257974 vs best 0.390430 — no improvement)
+Appended to results.tsv
+/workspace/autoresearch/post_train2.sh: line 54: /home/researcher/.local/bin/uv: No such file or directory
+Plot update skipped (uv not found)
+[master 7d6d60d] exp: FINAL — yolo11l 2h TIME train+test — val_map50_95=0.257974 [discard]
+ 1 file changed, 1 insertion(+)
+To https://github.com/muhammad-zainal-muttaqin/autoresearch.git
+   63a852d..7d6d60d  master -> master
+Pushed to GitHub!
+All done.

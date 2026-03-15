@@ -26,14 +26,14 @@ from prepare import (
 DATA_YAML = REPO_ROOT / "Dataset-TrainTest" / "data.yaml"
 
 # ── Model ────────────────────────────────────────────────────────────────────
-MODEL = "yolo11l.pt"
+MODEL = "yolo11s.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
-TIME_HOURS = 2.0  # 2 hours — allows 100+ epochs for yolo11l at 640px
+TIME_HOURS = 0.5  # 30 min — fast signal testing
 
 # ── Training hyperparameters ─────────────────────────────────────────────────
-EPOCHS = 300
-PATIENCE = 50
+EPOCHS = 40
+PATIENCE = 15
 OPTIMIZER = "AdamW"
 LR0 = 0.001
 LRF = 0.01
@@ -67,6 +67,7 @@ CLOSE_MOSAIC = 10
 BOX = 7.5
 CLS = 0.5
 DFL = 1.5
+LABEL_SMOOTHING = 0.1  # Soft labels to reduce B2/B3 confusion penalty
 
 # ── Misc ─────────────────────────────────────────────────────────────────────
 FREEZE = None  # e.g. 10 to freeze first 10 layers
@@ -122,6 +123,7 @@ def main():
         box=BOX,
         cls=CLS,
         dfl=DFL,
+        label_smoothing=LABEL_SMOOTHING,
         amp=AMP,
         seed=SEED,
         project=str(RUNS_ROOT),

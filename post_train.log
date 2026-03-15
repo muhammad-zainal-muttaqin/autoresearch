@@ -1,0 +1,17 @@
+Waiting for training PID 69451 to finish...
+Training finished. Processing results...
+Results:
+  val_map50:     
+  val_map50_95:  
+  precision:     
+  recall:        
+  peak_vram_mb:  
+No improvement:  <= 0.390430
+Appended to results.tsv
+/workspace/autoresearch/post_train.sh: line 49: uv: command not found
+[master 2796a26] exp: FINAL — yolo11l 2h TIME_HOURS train+test — val_map50_95= [discard]
+ 1 file changed, 1 insertion(+)
+To https://github.com/muhammad-zainal-muttaqin/autoresearch.git
+   d945b18..2796a26  master -> master
+Pushed to GitHub
+Done.
