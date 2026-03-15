@@ -337,6 +337,20 @@
 3. train_dinov2_classifier.py: New script for DINOv2-base frozen backbone + MLP head classifier.
 
 
+## Experiment 13 — 2026-03-15 05:11 UTC
+
+**Hypothesis**: If the old two-stage result was mainly held down by the broken evaluator, then re-running the existing stage1 detector plus EfficientNet stage2 classifier with a corrected COCO-style evaluator should materially improve the reported mAP50-95 and clarify whether two-stage is still worth pursuing.
+
+**Change**: Re-evaluate `stage1_detector.pt` + `stage2_classifier.pth` with `scripts/two_stage_eval_v2.py`, which uses true IoU-swept mAP50-95 instead of the old approximation.
+
+**Result**: val_map50_95=0.167510 (delta=-0.101914 from best 0.269424) — DISCARD
+
+**Per-class**: B1=0.320 B2=0.100 B3=0.193 B4=0.057
+
+**Analysis**: The corrected two-stage baseline remains far below the best one-stage detector. The old `~0.169` result was not just an evaluator artifact; the underlying EfficientNet stage-2 classifier is still the real bottleneck, especially on B2 and B4. This closes the old EfficientNet two-stage branch decisively and justifies moving all stage-2 effort to stronger classifiers rather than revisiting the same detector/classifier pair.
+
+**Next**: Train the DINOv2 stage-2 classifier, then re-run the corrected two-stage evaluator with the new checkpoint. If B2 remains weak, escalate immediately to the ordinal DINOv2 classifier instead of retrying any EfficientNet or one-stage tuning branch.
+
 
 
 
