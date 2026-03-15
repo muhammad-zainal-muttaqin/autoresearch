@@ -109,7 +109,12 @@ autoresearch/
 | 36 | 0.2619 | discard | yolo11l LR=0.002 | LR lebih tinggi merusak |
 | 37 | 0.2688 | discard | yolo11l epochs 100 | tidak lebih baik dari 80 |
 | 38 | 0.2644 | discard | yolo11l SGD | AdamW konsisten lebih baik |
-| **39** | **TBD** | **TBD** | **yolo11l TIME_HOURS=2.0 (sedang berjalan)** | **eksperimen terakhir** |
+| **39** | 0.2579 | discard | yolo11l TIME_HOURS=2.0 train+test long-run | tidak lebih baik dari epochs=80 |
+| **40** | — | discard | two-stage stage1+EfficientNet corrected-eval | val_map50_95=0.1675 (dua-tahap tetap buruk) |
+| **41** | — | discard | two-stage stage1+DINOv2-CE corrected-eval | val_map50_95=0.1811, B2=0.100 — backbone kuat tidak cukup |
+| **42** | — | discard | CORN ordinal classifier | val_acc=57.4%, B2=34.6% — gagal total |
+| **43 (18a)** | — | **keep** | **Hierarchical coarse B1/B23/B4 DINOv2 classifier** | **val_acc=75.09%, B1=85.0%, B23=76.5%, B4=64.6%** |
+| **44 (18b)** | — | partial | Binary B2/B3 specialist (hanya 6 epoch dari 50) | best val_acc=72.81% epoch 2 (BELUM CONVERGE) |
 
 ---
 
@@ -318,19 +323,63 @@ git push origin master
 
 ---
 
-## 10. Catatan untuk Session Berikutnya
+## 10. State Terakhir — Sesi Terkini (2026-03-15)
+
+### Status Eksperimen Hierarkis
+
+**Exp 18a: Coarse B1/B23/B4 Classifier — SELESAI**
+- Checkpoint: `stage2_hier_coarse3_dinov2_classifier.pth`
+- val_acc=75.09% (epoch 40/50)
+- B1=85.0%, B23=76.5%, B4=64.6%
+- Kelemahan kritis: 35% B4 crops salah diklasifikasi sebagai B23 → akan menyakiti pipeline end-to-end
+
+**Exp 18b: Binary B2/B3 Specialist — TIDAK SELESAI**
+- Checkpoint: `stage2_hier_b23_dinov2_classifier.pth`
+- Hanya 6 dari 50 epoch dieksekusi, BERHENTI SEBELUM CONVERGE
+- Best val_acc=72.81% di epoch 2 (B2=57.4%, B3=80.0%) — checkpoint ini TIDAK RELIABLE
+- Perlu dilanjutkan (retrain) ke 50 epoch penuh
+
+**End-to-End Hierarchical Eval — BELUM DILAKUKAN**
+- Script: `scripts/two_stage_hierarchical_eval.py`
+- Sebelum eval, B2/B3 specialist harus diretrain/dilanjutkan ke konvergensi
+
+**SupCon (Contrastive) Specialist — BELUM DILAKUKAN**
+- Plan ada di Experiment 19 di experiment-journal.md
+- Ini adalah next priority jika plain CE specialist tetap gagal di B2
+
+### Prioritas Sesion Berikutnya
+1. **Retrain B2/B3 specialist** ke 50 epoch penuh (2h budget)
+2. **Run hierarchical end-to-end eval** dengan `two_stage_hierarchical_eval.py`
+3. **Jika pipeline >0.269**: dokumentasi dan terus perkuat
+4. **Jika pipeline ≤0.269**: coba SupCon specialist (Exp 19)
+5. **Setelah itu**: pertimbangkan fine-tuning DINOv2 (unfreeze backbone layer terakhir)
+
+---
+
+## 11. Catatan untuk Session Berikutnya
 
 Ketika memulai session baru:
 1. Baca `results.tsv` untuk tahu current best
 2. Baca `research/experiment-journal.md` untuk tahu apa yang sudah dicoba dan mengapa
 3. Baca `rangkuman-progress/rangkuman.md` untuk history sebelum session ini
-4. Jalankan `uv run prepare.py` untuk verifikasi dataset
-5. Cek apakah `Dataset-TrainTest/` masih ada (tidak di-track git, perlu dibuat ulang jika tidak ada dengan `python scripts/make_traintest_dataset.py`)
-6. **Mulai dari Jalur B (Two-Stage + DINOv2)** — paling menjanjikan berdasarkan bukti
+4. Baca `rangkuman-agent-claude.md` Section 10 untuk state terakhir
+5. Jalankan `uv run prepare.py` untuk verifikasi dataset
+
+**Urutan Prioritas Eksperimen Berikutnya**:
+1. Retrain B2/B3 specialist: `uv run python scripts/train_dinov2_classifier.py --dataset Dataset-Crops-B23 --epochs 50 2>&1 | tee hier_b23_full_run.log`
+2. Hierarchical eval: `uv run python scripts/two_stage_hierarchical_eval.py 2>&1 | tee hier_eval_run.log`
+3. Jika pipeline gagal: SupCon specialist (Exp 19 di experiment-journal.md)
+4. Jika kontrastif gagal: pertimbangkan fine-tuning backbone DINOv2 (unfreeze 2 layer terakhir, lr=1e-5)
 
 Dataset yang perlu dibuat ulang jika tidak ada:
 ```bash
-python scripts/make_traintest_dataset.py  # Dataset-TrainTest/
-python scripts/make_single_class_dataset.py  # Dataset-SingleClass/
-python scripts/make_crop_dataset.py  # Dataset-Crops/
+python scripts/make_traintest_dataset.py        # Dataset-TrainTest/
+python scripts/make_single_class_dataset.py     # Dataset-SingleClass/
+python scripts/make_crop_dataset.py             # Dataset-Crops/ (flat 4-class)
+python scripts/make_hierarchical_crop_datasets.py  # Dataset-Crops-Coarse3/ & Dataset-Crops-B23/
 ```
+
+Checkpoint yang ada (per 2026-03-15):
+- `stage1_detector.pt` — single-class YOLO detector, mAP50-95=0.390
+- `stage2_hier_coarse3_dinov2_classifier.pth` — coarse B1/B23/B4, val_acc=75.09%
+- `stage2_hier_b23_dinov2_classifier.pth` — binary B2/B3 (PARTIAL, epoch 2 checkpoint, NOT converged)

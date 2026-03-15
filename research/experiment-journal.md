@@ -437,6 +437,59 @@
 **Falsification rule**: If the coarse classifier is strong but the binary `B2/B3` specialist still stays near chance, then the ambiguity is not being fixed by decomposition alone and the next branch must change the embedding objective itself (contrastive / prototype-based learning).
 
 
+## Experiment 18a — 2026-03-15 12:49 UTC — Hierarchical Coarse Classifier (B1/B23/B4)
+
+**Hypothesis**: If stage-2 is decomposed hierarchically, a coarse `B1/B23/B4` classifier can handle easy decisions, offloading the hard `B2/B3` boundary to a specialist. Best val_acc expected >75% based on the easier 3-way split.
+
+**Change**: Train DINOv2 frozen-backbone + linear head on `Dataset-Crops-Coarse3` (B2 and B3 merged into single B23 class). Dataset: train=12360, val=2786.
+
+**Result**: **val_acc=75.09%** at epoch 40 — KEEP as coarse classifier
+
+**Per-class accuracies**:
+- B1: 85.0% (301 crops; 256 correct, 44→B23, 1→B4)
+- B23: 76.5% (1931 crops; 101→B1, 1478 correct, 352→B4)
+- B4: 64.6% (554 crops; 2→B1, 194→B23, 358 correct)
+
+**Confusion matrix** (rows=true, cols=pred):
+```
+      B1   B23   B4
+B1:  256    44    1
+B23: 101  1478  352
+B4:    2   194  358
+```
+
+**Analysis**: Coarse classifier performs reasonably — 75.09% overall, and B1 at 85% is strong. Critical weakness: B4 at 64.6% with 194/554 B4 crops misclassified as B23. This is the hierarchical pipeline's Achilles' heel — if stage-2 coarse routes B4 objects into the B23 branch, they then get incorrectly classified as B2 or B3. The B23 cluster itself (76.5%) is decent and confirms the strategy of separating easy classes first. However, the B4→B23 leakage at 35% is a fundamental problem: in end-to-end evaluation, 35% of true B4 detections will be misclassified and then further confused inside the B2/B3 specialist. The best possible end-to-end outcome for B4 given this coarse classifier is at most 64.6% × (whatever the specialist does) ≈ badly hurt.
+
+**Key insight**: The coarse classifier is NOT better than expected for B4. B4 in the crop space looks visually similar to B23 (perhaps because B4 = overripe, with darker color similar to ripe B3). The coarse-3 strategy helps B1 but doesn't solve B4.
+
+**Next**: Run binary B2/B3 specialist, then compute hierarchical end-to-end mAP. If B4 leakage kills performance, the hierarchical strategy needs a B1/B2/B3/B4 coarse-but-not-merged alternative.
+
+
+## Experiment 18b — 2026-03-15 14:05 UTC — Binary B2/B3 Specialist (PARTIAL — stopped at epoch 6)
+
+**Hypothesis**: A binary DINOv2 classifier trained ONLY on B2/B3 crops, without the distraction of B1/B4 examples, should achieve better B2/B3 separation than a flat 4-way classifier. Target: >75% binary accuracy.
+
+**Change**: Train DINOv2 frozen + linear head on `Dataset-Crops-B23` (only B2=2844, B3=5633 crops). Class-weighted loss to address B2/B3 imbalance.
+
+**Result**: **best val_acc=72.81%** at epoch 2 (B2=57.4%, B3=80.0%) — INCOMPLETE (stopped at epoch 6 of 50)
+
+**Per-class at best checkpoint (epoch 2)**:
+- B2: 57.4% accuracy (extremely weak — specialist still biased toward B3)
+- B3: 80.0% accuracy
+
+**Epoch 5 snapshot** (B2=77.9%, B3=60.6% — B2 peaks briefly but overall accuracy drops to 66.1%):
+- The best checkpoint at epoch 2 was saved because overall val_acc was highest there, but B2 accuracy had a momentary peak at epoch 5 (77.9%) with much lower B3 (60.6%)
+
+**Analysis**: INCOMPLETE. Only 6 of 50 planned epochs were executed before the session was stopped. The specialist has NOT converged. The pattern of B2 accuracy oscillating (57.4% at ep2, 64.4% at ep3, 73.7% at ep4, 77.9% at ep5) combined with B3 swinging opposite suggests the model is in an early optimization phase where the loss surface has competing attractors. The 72.81% checkpoint at epoch 2 is NOT a reliable best — it was saved because the OVERALL accuracy was highest, not because B2 was being well-separated. This specialist must be retrained to convergence (50 full epochs) before any end-to-end hierarchical evaluation.
+
+**Decision**: Checkpoint `stage2_hier_b23_dinov2_classifier.pth` at epoch 2 is NOT trustworthy for end-to-end eval. Must retrain or continue training.
+
+**Next**:
+1. Either retrain the B2/B3 specialist to 50 full epochs (2h budget)
+2. OR run hierarchical end-to-end eval with the current partial checkpoint as a lower-bound estimate
+3. Then move to contrastive specialist (Experiment 19) if plain CE specialist still fails at B2
+
+
 ## Experiment 19 — PLAN: Supervised-Contrastive B2/B3 Specialist
 
 **Observation**: The hierarchical branch removes the easy classes from the hard boundary, but it still relies on a standard cross-entropy binary specialist for `B2/B3`. Prior evidence already showed that flat cross-entropy tends to keep `B2` too close to `B3`, even with stronger backbones.
