@@ -1,0 +1,23 @@
+Device: cuda
+Dataset root: Dataset-Crops-B23
+
+Dataset sizes: train=8477, val=1931
+Classes: ['B2', 'B3']
+
+Building DINOv2 classifier...
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 5438.41it/s]
+  Total params: 87.0M | Trainable: 0.4M
+
+Computing class weights...
+  Class counts: {'B2': 2844, 'B3': 5633}
+  Class weights: ['1.490', '0.752']
+
+Training for up to 50 epochs (2.0h budget)...
+Epoch   1/50 | train_loss=0.6371 | train_acc=65.1% | val_loss=0.5717 | val_acc=70.1% | B2=62.6% B3=73.6% | lr=9.99e-04 | 0s elapsed
+  *** Saved best model (val_acc=70.12%) ***
+Epoch   2/50 | train_loss=0.5842 | train_acc=69.3% | val_loss=0.5483 | val_acc=72.8% | B2=57.4% B3=80.0% | lr=9.96e-04 | 47s elapsed
+  *** Saved best model (val_acc=72.81%) ***
+Epoch   3/50 | train_loss=0.5773 | train_acc=69.6% | val_loss=0.5593 | val_acc=70.9% | B2=64.4% B3=74.0% | lr=9.91e-04 | 94s elapsed
+Epoch   4/50 | train_loss=0.5633 | train_acc=70.0% | val_loss=0.6415 | val_acc=64.9% | B2=73.7% B3=60.9% | lr=9.84e-04 | 142s elapsed
+Epoch   5/50 | train_loss=0.5521 | train_acc=71.2% | val_loss=0.6327 | val_acc=66.1% | B2=77.9% B3=60.6% | lr=9.76e-04 | 190s elapsed
+Epoch   6/50 | train_loss=0.5456 | train_acc=71.7% | val_loss=0.5620 | val_acc=70.6% | B2=67.5% B3=72.0% | lr=9.65e-04 | 238s elapsed

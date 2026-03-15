@@ -16,6 +16,8 @@ The current project trains and evaluates a detector on 4 classes: `B1`, `B2`, `B
 
 The primary optimization target is `val_map50_95`. Higher is better.
 
+Untuk membaca ringkasan final sesi GPU dan histori penelitian terkonsolidasi, buka `research/RESEARCH_MASTER.md`.
+
 ## Project Layout
 
 ```text
@@ -23,6 +25,12 @@ train.py                editable experiment surface
 prepare.py              dataset constants, verification, evaluation
 program.md              agent instructions and experiment protocol
 plot_progress.py        regenerate progress.png from results.tsv
+scripts/toolbox.py      consolidated helper entrypoint for archived utilities
+research/RESEARCH_MASTER.md
+                        consolidated research history and session notes
+logs/                   raw experiment logs moved out of repo root
+configs/model_variants.yaml
+                        combined archived model config variants
 pyproject.toml          Python dependencies
 Dataset-YOLO/           canonical local split (gitignored)
   data.yaml             dataset config
@@ -30,13 +38,14 @@ Dataset-YOLO/           canonical local split (gitignored)
   labels/{train,val,test}
 ```
 
-Datasets, raw logs, and generated training outputs under `runs/` are local-only artifacts and should not be committed. The exceptions are `results.tsv` and `progress.png`, which act as durable experiment telemetry.
+Datasets and generated training outputs under `runs/` are local-only artifacts and should not be committed. The durable telemetry files are `results.tsv` and `progress.png`. Raw session logs are grouped under `logs/`.
 
 ## Editing and Artifact Policy
 
 - `train.py` is the only file the autoresearch agent should change during normal experimentation.
 - `prepare.py` is read-only unless a confirmed runtime bug blocks execution.
-- `results.tsv`, `baseline.log`, and `followup.log` are local artifacts and must stay uncommitted.
+- `results.tsv` and `progress.png` are the telemetry files normally kept in version control.
+- Raw console logs should go to `logs/` instead of the repository root.
 - `progress.png` must be regenerated from the current local `results.tsv` with `uv run python plot_progress.py` whenever a new result is recorded, and should be committed when publishing branch progress.
 
 ## Requirements
@@ -84,6 +93,8 @@ The canonical dataset split used by this repository currently contains `2,764` t
 
 `program.md` describes how an autonomous agent should set up branches, log results, and decide whether to keep or discard a change.
 
+Utility scripts from earlier experiments were consolidated into `scripts/toolbox.py`. Their original standalone sources now live under `scripts/archive/`.
+
 ## Training and Metrics
 
 By default, a run uses `TIME_HOURS = 0.5`, which means a 30-minute training budget. After training, `train.py` evaluates `runs/autoresearch/train/weights/best.pt` and prints:
@@ -124,7 +135,7 @@ The repository is designed to support repeated experiments where an agent:
 2. establishes a baseline run
 3. edits only the experiment constants in `train.py`
 4. reruns training
-5. logs the resulting metrics to versioned `results.tsv` and refreshes `progress.png`
+5. logs the resulting metrics to versioned `results.tsv`, stores raw console output under `logs/`, and refreshes `progress.png`
 
 That makes the codebase small enough for fast iteration while keeping evaluation consistent across runs.
 

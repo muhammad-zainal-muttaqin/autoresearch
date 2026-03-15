@@ -1,0 +1,30 @@
+Creating new Ultralytics Settings v0.0.6 file ✅ 
+View Ultralytics Settings with 'yolo settings' or at '/root/.config/Ultralytics/settings.json'
+Update Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings.
+Loading detector...
+Loading classifier: /workspace/autoresearch/stage2_dinov2_classifier.pth
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights:  84%|████████▍ | 188/223 [00:00<00:00, 1878.80it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 2123.84it/s]
+Classifier type: dinov2_ce
+
+Running v2 evaluation...
+  Evaluating on 604 val images...
+    100/604...
+    200/604...
+    300/604...
+    400/604...
+    500/604...
+    600/604...
+
+Two-stage pipeline v2 results:
+  GT counts: B1=301, B2=612, B3=1319, B4=554
+  AP50 per class:
+    B1: AP50=0.7186, mean_AP50-95=0.3788
+    B2: AP50=0.1982, mean_AP50-95=0.0996
+    B3: AP50=0.3592, mean_AP50-95=0.1658
+    B4: AP50=0.1933, mean_AP50-95=0.0801
+  mAP50:    0.367319
+  mAP50-95: 0.181088
+  Baseline (YOLO11l end-to-end): 0.269424
+  Delta vs baseline: -0.088336
+
+FINAL: mAP50=0.367319, mAP50-95=0.181088

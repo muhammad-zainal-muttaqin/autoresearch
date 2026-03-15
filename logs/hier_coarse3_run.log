@@ -1,0 +1,82 @@
+Device: cuda
+Dataset root: Dataset-Crops-Coarse3
+
+Dataset sizes: train=12360, val=2786
+Classes: ['B1', 'B23', 'B4']
+
+Building DINOv2 classifier...
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 5514.69it/s]
+  Total params: 87.0M | Trainable: 0.4M
+
+Computing class weights...
+  Class counts: {'B1': 1540, 'B23': 8477, 'B4': 2343}
+  Class weights: ['2.675', '0.486', '1.758']
+
+Training for up to 50 epochs (2.0h budget)...
+Epoch   1/50 | train_loss=0.6398 | train_acc=64.6% | val_loss=0.5822 | val_acc=72.6% | B1=92.7% B23=73.8% B4=57.4% | lr=9.99e-04 | 0s elapsed
+  *** Saved best model (val_acc=72.58%) ***
+Epoch   2/50 | train_loss=0.5426 | train_acc=68.1% | val_loss=0.6519 | val_acc=67.6% | B1=92.0% B23=61.5% B4=75.8% | lr=9.96e-04 | 67s elapsed
+Epoch   3/50 | train_loss=0.5248 | train_acc=69.4% | val_loss=0.6013 | val_acc=70.9% | B1=91.7% B23=67.0% B4=73.5% | lr=9.91e-04 | 136s elapsed
+Epoch   4/50 | train_loss=0.4988 | train_acc=71.0% | val_loss=0.5399 | val_acc=74.9% | B1=91.0% B23=76.3% B4=61.2% | lr=9.84e-04 | 206s elapsed
+  *** Saved best model (val_acc=74.87%) ***
+Epoch   5/50 | train_loss=0.4876 | train_acc=71.8% | val_loss=0.6393 | val_acc=69.9% | B1=93.7% B23=64.7% B4=75.3% | lr=9.76e-04 | 277s elapsed
+Epoch   6/50 | train_loss=0.4835 | train_acc=71.7% | val_loss=0.5881 | val_acc=72.2% | B1=93.0% B23=70.5% B4=66.6% | lr=9.65e-04 | 347s elapsed
+Epoch   7/50 | train_loss=0.4754 | train_acc=72.6% | val_loss=0.6059 | val_acc=70.6% | B1=93.0% B23=66.8% B4=71.8% | lr=9.52e-04 | 418s elapsed
+Epoch   8/50 | train_loss=0.4561 | train_acc=73.1% | val_loss=0.6220 | val_acc=69.8% | B1=92.0% B23=65.4% B4=73.5% | lr=9.38e-04 | 488s elapsed
+Epoch   9/50 | train_loss=0.4581 | train_acc=73.0% | val_loss=0.6257 | val_acc=70.6% | B1=92.4% B23=67.3% B4=70.4% | lr=9.22e-04 | 558s elapsed
+Epoch  10/50 | train_loss=0.4441 | train_acc=73.4% | val_loss=0.5998 | val_acc=70.3% | B1=89.7% B23=67.0% B4=71.3% | lr=9.05e-04 | 628s elapsed
+Epoch  11/50 | train_loss=0.4365 | train_acc=74.0% | val_loss=0.5861 | val_acc=72.4% | B1=91.7% B23=71.4% B4=65.2% | lr=8.85e-04 | 698s elapsed
+Epoch  12/50 | train_loss=0.4254 | train_acc=75.2% | val_loss=0.6771 | val_acc=66.9% | B1=91.0% B23=58.6% B4=82.9% | lr=8.65e-04 | 769s elapsed
+Epoch  13/50 | train_loss=0.4244 | train_acc=74.5% | val_loss=0.5922 | val_acc=71.0% | B1=87.0% B23=67.9% B4=73.3% | lr=8.42e-04 | 839s elapsed
+Epoch  14/50 | train_loss=0.4137 | train_acc=75.8% | val_loss=0.6566 | val_acc=68.3% | B1=89.0% B23=61.8% B4=79.6% | lr=8.19e-04 | 909s elapsed
+Epoch  15/50 | train_loss=0.4167 | train_acc=74.9% | val_loss=0.7189 | val_acc=65.4% | B1=91.0% B23=56.1% B4=83.9% | lr=7.94e-04 | 979s elapsed
+Epoch  16/50 | train_loss=0.4034 | train_acc=76.3% | val_loss=0.6317 | val_acc=68.9% | B1=87.4% B23=62.9% B4=79.6% | lr=7.68e-04 | 1050s elapsed
+Epoch  17/50 | train_loss=0.3818 | train_acc=77.8% | val_loss=0.6268 | val_acc=70.2% | B1=91.4% B23=65.6% B4=74.7% | lr=7.41e-04 | 1120s elapsed
+Epoch  18/50 | train_loss=0.3933 | train_acc=76.9% | val_loss=0.5475 | val_acc=73.8% | B1=86.7% B23=73.4% B4=68.2% | lr=7.13e-04 | 1190s elapsed
+Epoch  19/50 | train_loss=0.3711 | train_acc=77.9% | val_loss=0.5795 | val_acc=73.5% | B1=89.7% B23=72.3% B4=68.8% | lr=6.84e-04 | 1260s elapsed
+Epoch  20/50 | train_loss=0.3608 | train_acc=78.4% | val_loss=0.6191 | val_acc=72.1% | B1=90.4% B23=69.9% B4=69.7% | lr=6.55e-04 | 1331s elapsed
+Epoch  21/50 | train_loss=0.3673 | train_acc=78.3% | val_loss=0.6159 | val_acc=71.9% | B1=90.7% B23=68.8% B4=72.4% | lr=6.25e-04 | 1401s elapsed
+Epoch  22/50 | train_loss=0.3631 | train_acc=78.8% | val_loss=0.6430 | val_acc=69.9% | B1=88.7% B23=65.5% B4=74.9% | lr=5.94e-04 | 1471s elapsed
+Epoch  23/50 | train_loss=0.3455 | train_acc=79.3% | val_loss=0.6331 | val_acc=70.8% | B1=88.0% B23=67.4% B4=73.5% | lr=5.63e-04 | 1541s elapsed
+Epoch  24/50 | train_loss=0.3415 | train_acc=79.7% | val_loss=0.5640 | val_acc=74.9% | B1=88.7% B23=76.0% B4=63.7% | lr=5.32e-04 | 1611s elapsed
+  *** Saved best model (val_acc=74.95%) ***
+Epoch  25/50 | train_loss=0.3323 | train_acc=80.5% | val_loss=0.5971 | val_acc=73.1% | B1=89.7% B23=72.1% B4=67.5% | lr=5.00e-04 | 1682s elapsed
+Epoch  26/50 | train_loss=0.3356 | train_acc=80.5% | val_loss=0.6382 | val_acc=71.0% | B1=89.7% B23=67.5% B4=72.9% | lr=4.69e-04 | 1753s elapsed
+Epoch  27/50 | train_loss=0.3296 | train_acc=81.0% | val_loss=0.6251 | val_acc=72.0% | B1=91.0% B23=70.0% B4=68.4% | lr=4.38e-04 | 1823s elapsed
+Epoch  28/50 | train_loss=0.3225 | train_acc=81.1% | val_loss=0.6347 | val_acc=71.8% | B1=88.4% B23=68.6% B4=73.8% | lr=4.07e-04 | 1893s elapsed
+Epoch  29/50 | train_loss=0.3128 | train_acc=81.9% | val_loss=0.6101 | val_acc=73.4% | B1=90.7% B23=72.0% B4=68.8% | lr=3.76e-04 | 1963s elapsed
+Epoch  30/50 | train_loss=0.3054 | train_acc=82.2% | val_loss=0.6086 | val_acc=74.3% | B1=90.0% B23=74.6% B4=64.4% | lr=3.46e-04 | 2034s elapsed
+Epoch  31/50 | train_loss=0.3089 | train_acc=82.1% | val_loss=0.6154 | val_acc=72.4% | B1=87.4% B23=70.5% B4=70.8% | lr=3.17e-04 | 2104s elapsed
+Epoch  32/50 | train_loss=0.2961 | train_acc=82.9% | val_loss=0.5761 | val_acc=74.6% | B1=85.7% B23=75.9% B4=64.3% | lr=2.88e-04 | 2174s elapsed
+Epoch  33/50 | train_loss=0.2949 | train_acc=83.1% | val_loss=0.6163 | val_acc=72.4% | B1=87.4% B23=70.6% B4=70.4% | lr=2.60e-04 | 2244s elapsed
+Epoch  34/50 | train_loss=0.2868 | train_acc=83.2% | val_loss=0.6380 | val_acc=72.6% | B1=89.4% B23=70.1% B4=72.2% | lr=2.33e-04 | 2314s elapsed
+Epoch  35/50 | train_loss=0.2826 | train_acc=83.1% | val_loss=0.6020 | val_acc=73.8% | B1=87.0% B23=74.1% B4=65.7% | lr=2.07e-04 | 2384s elapsed
+Epoch  36/50 | train_loss=0.2724 | train_acc=84.2% | val_loss=0.6043 | val_acc=74.0% | B1=87.0% B23=74.8% B4=64.4% | lr=1.82e-04 | 2455s elapsed
+Epoch  37/50 | train_loss=0.2689 | train_acc=84.7% | val_loss=0.6328 | val_acc=73.2% | B1=89.4% B23=71.5% B4=70.0% | lr=1.59e-04 | 2525s elapsed
+Epoch  38/50 | train_loss=0.2687 | train_acc=84.6% | val_loss=0.6222 | val_acc=73.0% | B1=85.7% B23=72.2% B4=69.1% | lr=1.36e-04 | 2595s elapsed
+Epoch  39/50 | train_loss=0.2703 | train_acc=84.4% | val_loss=0.6487 | val_acc=72.5% | B1=88.7% B23=70.1% B4=71.8% | lr=1.16e-04 | 2665s elapsed
+Epoch  40/50 | train_loss=0.2633 | train_acc=85.0% | val_loss=0.6002 | val_acc=75.1% | B1=85.0% B23=76.5% B4=64.6% | lr=9.64e-05 | 2735s elapsed
+  *** Saved best model (val_acc=75.09%) ***
+Epoch  41/50 | train_loss=0.2621 | train_acc=85.1% | val_loss=0.5991 | val_acc=74.9% | B1=85.4% B23=76.5% B4=63.5% | lr=7.88e-05 | 2806s elapsed
+Epoch  42/50 | train_loss=0.2552 | train_acc=85.5% | val_loss=0.6226 | val_acc=73.5% | B1=86.4% B23=72.7% B4=69.3% | lr=6.28e-05 | 2876s elapsed
+Epoch  43/50 | train_loss=0.2513 | train_acc=85.8% | val_loss=0.6171 | val_acc=74.0% | B1=85.0% B23=73.7% B4=69.0% | lr=4.85e-05 | 2947s elapsed
+Epoch  44/50 | train_loss=0.2516 | train_acc=85.5% | val_loss=0.6395 | val_acc=72.8% | B1=86.4% B23=71.0% B4=71.5% | lr=3.61e-05 | 3017s elapsed
+Epoch  45/50 | train_loss=0.2581 | train_acc=85.3% | val_loss=0.6141 | val_acc=74.6% | B1=87.0% B23=75.2% B4=65.3% | lr=2.54e-05 | 3087s elapsed
+Epoch  46/50 | train_loss=0.2576 | train_acc=85.3% | val_loss=0.6001 | val_acc=75.1% | B1=86.4% B23=76.3% B4=64.8% | lr=1.67e-05 | 3157s elapsed
+Epoch  47/50 | train_loss=0.2582 | train_acc=85.7% | val_loss=0.6235 | val_acc=73.8% | B1=86.4% B23=73.4% B4=68.2% | lr=9.85e-06 | 3227s elapsed
+Epoch  48/50 | train_loss=0.2491 | train_acc=85.6% | val_loss=0.6126 | val_acc=74.9% | B1=86.7% B23=75.8% B4=65.5% | lr=4.94e-06 | 3298s elapsed
+Epoch  49/50 | train_loss=0.2553 | train_acc=85.1% | val_loss=0.6161 | val_acc=74.0% | B1=84.7% B23=73.9% B4=68.4% | lr=1.99e-06 | 3368s elapsed
+Epoch  50/50 | train_loss=0.2473 | train_acc=85.9% | val_loss=0.6117 | val_acc=74.8% | B1=87.4% B23=75.7% B4=64.6% | lr=1.00e-06 | 3438s elapsed
+
+Best val_acc: 75.09% at epoch 40
+DINOv2 classifier saved to stage2_hier_coarse3_dinov2_classifier.pth
+
+Best per-class accuracy:
+  B1: 85.0%
+  B23: 76.5%
+  B4: 64.6%
+
+Best confusion matrix (rows=true, cols=pred):
+  B1:  256   44    1
+  B23:  101 1478  352
+  B4:    2  194  358
