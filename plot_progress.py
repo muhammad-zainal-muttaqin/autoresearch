@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import textwrap
 from pathlib import Path
 
@@ -27,7 +28,7 @@ def human_label(row: pd.Series) -> str:
         description = f"{row['status']} run"
 
     description = description.replace("_", " ")
-    return "\n".join(textwrap.wrap(description, width=22)) or description
+    return " ".join(textwrap.wrap(description, width=28)) or description
 
 
 def main() -> None:
@@ -48,61 +49,86 @@ def main() -> None:
     df["val_map50_95"] = pd.to_numeric(df["val_map50_95"], errors="coerce").fillna(0.0)
     df["iteration"] = range(1, len(df) + 1)
 
-    status_colors = {
-        "keep": "#2e8b57",
-        "discard": "#d23b3b",
-        "crash": "#666666",
-    }
+    keep_df = df[df["status"] == "keep"].copy()
+    discarded_df = df[df["status"] != "keep"].copy()
+    keep_df["running_best"] = keep_df["val_map50_95"].cummax()
+    running_best_df = keep_df[keep_df["val_map50_95"] == keep_df["running_best"]].copy()
 
     fig, ax = plt.subplots(figsize=(14, 7), constrained_layout=True)
-    ax.plot(df["iteration"], df["val_map50_95"], color="#8da2ad", linewidth=2.0, alpha=0.9, zorder=1)
 
-    for status, group in df.groupby("status", dropna=False):
-        color = status_colors.get(status, "#4b6a88")
+    if not discarded_df.empty:
         ax.scatter(
-            group["iteration"],
-            group["val_map50_95"],
-            c=color,
-            s=150,
-            edgecolors="white",
-            linewidths=1.6,
+            discarded_df["iteration"],
+            discarded_df["val_map50_95"],
+            s=10,
+            color="#cfcfcf",
+            alpha=0.8,
+            edgecolors="none",
+            label="Discarded",
+            zorder=1,
+        )
+
+    if not keep_df.empty:
+        ax.scatter(
+            keep_df["iteration"],
+            keep_df["val_map50_95"],
+            s=22,
+            color="#37b26c",
+            edgecolors="#1f7a4c",
+            linewidths=0.6,
+            label="Kept",
             zorder=3,
         )
-
-    for _, row in df.iterrows():
-        offset_y = 8 if row["status"] != "crash" else 6
-        va = "bottom"
-        if row["status"] == "crash" and row["val_map50_95"] <= 0.01:
-            offset_y = 8
-            va = "bottom"
-
-        ax.annotate(
-            human_label(row),
-            (row["iteration"], row["val_map50_95"]),
-            textcoords="offset points",
-            xytext=(0, offset_y),
-            ha="center",
-            va=va,
-            fontsize=9,
-            color="#222222",
-            bbox={
-                "boxstyle": "round,pad=0.22",
-                "facecolor": "white",
-                "edgecolor": "none",
-                "alpha": 0.8,
-            },
-            zorder=4,
+        ax.step(
+            keep_df["iteration"],
+            keep_df["running_best"],
+            where="post",
+            color="#37b26c",
+            linewidth=1.2,
+            alpha=0.9,
+            label="Running best",
+            zorder=2,
         )
 
-    ax.set_title("Autoresearch val mAP50-95 by Iteration", fontsize=20)
-    ax.set_xlabel("Iteration", fontsize=16)
-    ax.set_ylabel("val_map50_95", fontsize=16)
-    ax.grid(True, linestyle="--", linewidth=1, alpha=0.35)
-    ax.set_xticks(df["iteration"])
-
     max_value = float(df["val_map50_95"].max())
-    margin = max(0.01, max_value * 0.06)
-    ax.set_ylim(-0.01, max_value + margin)
+    min_value = float(df["val_map50_95"].min())
+    value_span = max(max_value - min_value, 0.02)
+
+    last_labeled_x = -10
+    for _, row in running_best_df.iterrows():
+        x = int(row["iteration"])
+        y = float(row["val_map50_95"])
+        if x - last_labeled_x < 2 and y < max_value - 0.01:
+            continue
+        ax.annotate(
+            human_label(row),
+            (x, y),
+            textcoords="offset points",
+            xytext=(4, 4),
+            ha="left",
+            va="bottom",
+            rotation=28,
+            fontsize=6,
+            color="#2f9e61",
+            alpha=0.95,
+            zorder=4,
+        )
+        last_labeled_x = x
+
+    ax.set_title(
+        f"Autoresearch Progress: {len(df)} Experiments, {len(keep_df)} Kept Improvements",
+        fontsize=12,
+    )
+    ax.set_xlabel("Experiment #", fontsize=9)
+    ax.set_ylabel("Validation mAP50-95 (higher is better)", fontsize=9)
+    ax.grid(True, color="#e9ecef", linewidth=0.8, alpha=0.8)
+
+    tick_step = max(1, math.ceil(len(df) / 12))
+    ax.set_xticks(list(range(0, len(df) + 1, tick_step)))
+    ax.tick_params(axis="both", labelsize=8)
+    ax.set_xlim(-1, len(df) + 1)
+    ax.set_ylim(min(-0.01, min_value - value_span * 0.03), max_value + value_span * 0.10)
+    ax.legend(loc="upper right", fontsize=7, frameon=True)
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUTPUT_PATH, dpi=150, bbox_inches="tight")
