@@ -149,6 +149,37 @@ class DINOv2OrdinalClassifier(nn.Module):
         return self.ordinal_head(features)
 
 
+class DINOv2CORNClassifier(nn.Module):
+    """Frozen DINOv2 backbone with a CORN conditional ordinal head."""
+
+    def __init__(
+        self,
+        n_classes: int = N_CLASSES,
+        model_name: str = "facebook/dinov2-base",
+        freeze_backbone: bool = True,
+    ):
+        super().__init__()
+        transformers = ensure_transformers()
+        self.backbone = transformers.AutoModel.from_pretrained(model_name)
+        if freeze_backbone:
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+
+        hidden_size = self.backbone.config.hidden_size
+        self.head = nn.Sequential(
+            nn.Linear(hidden_size, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, n_classes - 1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        outputs = self.backbone(pixel_values=x)
+        cls_embedding = outputs.last_hidden_state[:, 0, :]
+        return self.head(cls_embedding)
+
+
 def coral_levels_from_labels(labels: torch.Tensor, num_classes: int = N_CLASSES) -> torch.Tensor:
     thresholds = torch.arange(num_classes - 1, device=labels.device)
     return (labels.unsqueeze(1) > thresholds.unsqueeze(0)).float()
@@ -165,9 +196,24 @@ def ordinal_logits_to_probs(logits: torch.Tensor) -> torch.Tensor:
     return probs / probs.sum(dim=1, keepdim=True).clamp_min(1e-8)
 
 
+def corn_logits_to_probs(logits: torch.Tensor) -> torch.Tensor:
+    cond = torch.sigmoid(logits)
+    class_probs = [1.0 - cond[:, :1]]
+    running = cond[:, :1]
+    for idx in range(1, cond.shape[1]):
+        class_probs.append(running * (1.0 - cond[:, idx : idx + 1]))
+        running = running * cond[:, idx : idx + 1]
+    class_probs.append(running)
+    probs = torch.cat(class_probs, dim=1)
+    probs = probs.clamp_min(0.0)
+    return probs / probs.sum(dim=1, keepdim=True).clamp_min(1e-8)
+
+
 def classifier_logits_to_probs(classifier_type: str, logits: torch.Tensor) -> torch.Tensor:
     if classifier_type == "dinov2_coral":
         return ordinal_logits_to_probs(logits)
+    if classifier_type == "dinov2_corn":
+        return corn_logits_to_probs(logits)
     return torch.softmax(logits, dim=1)
 
 
@@ -221,6 +267,8 @@ def load_stage2_classifier(checkpoint_path, device: torch.device) -> LoadedClass
         model = EfficientNetB0Classifier()
     elif classifier_type == "dinov2_coral":
         model = DINOv2OrdinalClassifier(model_name=model_name)
+    elif classifier_type == "dinov2_corn":
+        model = DINOv2CORNClassifier(model_name=model_name)
     elif classifier_type == "dinov2_ce":
         model = DINOv2Classifier(model_name=model_name)
     else:

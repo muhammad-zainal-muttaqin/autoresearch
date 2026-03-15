@@ -24,6 +24,7 @@ from stage2_models import (
 DETECTOR_PATH = Path("/workspace/autoresearch/stage1_detector.pt")
 CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_classifier.pth")
 DINOV2_CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_dinov2_classifier.pth")
+DINOV2_CORN_CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_dinov2_corn_classifier.pth")
 ORDINAL_CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_dinov2_ordinal_classifier.pth")
 
 DETECTOR_CONF = 0.1
@@ -243,6 +244,7 @@ def pick_classifier_path(cli_value: str | None) -> Path:
     if cli_value:
         return Path(cli_value)
     for candidate in (
+        DINOV2_CORN_CLASSIFIER_PATH,
         ORDINAL_CLASSIFIER_PATH,
         DINOV2_CLASSIFIER_PATH,
         CLASSIFIER_PATH,
