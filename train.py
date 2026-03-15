@@ -7,27 +7,33 @@ Usage: uv run train.py
 import os
 import time
 import shutil
+from pathlib import Path
 import torch
 from ultralytics import YOLO
 from prepare import (
     BEST_WEIGHTS,
-    DATA_YAML,
     DEFAULT_TIME_HOURS,
+    REPO_ROOT,
     RUNS_ROOT,
     TRAIN_RUN_DIR,
     evaluate_model,
     verify_dataset,
 )
 
+# ── Dataset ───────────────────────────────────────────────────────────────────
+# Use Dataset-TrainTest (train+test as training set, val unchanged) — this gave
+# the best results historically. Evaluation always uses Dataset-YOLO val split.
+DATA_YAML = REPO_ROOT / "Dataset-TrainTest" / "data.yaml"
+
 # ── Model ────────────────────────────────────────────────────────────────────
 MODEL = "yolo11l.pt"
 
 # ── Time budget ──────────────────────────────────────────────────────────────
-TIME_HOURS = 0.33  # ~20 minutes max per iteration
+TIME_HOURS = 2.0  # 2 hours — allows 100+ epochs for yolo11l at 640px
 
 # ── Training hyperparameters ─────────────────────────────────────────────────
-EPOCHS = 60
-PATIENCE = 15
+EPOCHS = 300
+PATIENCE = 50
 OPTIMIZER = "AdamW"
 LR0 = 0.001
 LRF = 0.01

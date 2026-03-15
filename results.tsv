@@ -31,3 +31,9 @@ c3baa42	0.527457	0.255829	0.482502	0.620043	12.1	discard	yolo11m imgsz 1024 batc
 3a557ad	0.552025	0.267224	0.500818	0.624680	9.8	keep	yolo11l batch 16 imgsz 640 train+test BEST! B2=0.216
 0132766	0.260303	0.260303	0.497850	0.619742	12.1	discard	yolo11x batch 16 imgsz 640 train+test (too large)
 0132766	0.553808	0.269252	0.500502	0.626121	9.8	keep	yolo11l epochs 60 batch 16 imgsz 640 train+test NEW BEST!
+d9a3ded	0.554304	0.269424	0.502331	0.631508	9.8	keep	yolo11l epochs 80 batch 16 imgsz 640 train+test (marginal +0.0002)
+d9a3ded	0.558633	0.265258	0.512225	0.634084	9.8	discard	yolov9c epochs 80 batch 16 imgsz 640 train+test (vs yolo11l worse)
+d9a3ded	0.554394	0.268658	0.517426	0.624531	9.8	discard	yolo11l copy_paste 0.3 epochs 80 train+test (marginal regression)
+d9a3ded	0.551415	0.261906	0.515891	0.619879	9.8	discard	yolo11l LR0=0.002 epochs 80 train+test (higher LR hurts)
+d9a3ded	0.268789	0.268789	0.510604	0.625442	9.8	discard	yolo11l epochs 100 train+test (no improvement vs 80)
+d9a3ded	0.552839	0.264376	0.513143	0.627492	9.8	discard	yolo11l SGD epochs 80 train+test (AdamW better)
