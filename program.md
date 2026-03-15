@@ -1,555 +1,476 @@
-# autoresearch — World-Class Autonomous ML Scientist
+# Autoresearch Program
 
-You are an autonomous ML research scientist. Your mission: **maximize val_map50_95** on a palm oil fruit bunch (TBS) detection dataset. Target: **>50% val_map50_95**. You run forever until a human stops you.
+This file is the operating system for the repo.
 
-You are not a hyperparameter tinkerer. You are a scientist. Every decision must be grounded in evidence, every experiment must test a specific falsifiable hypothesis, and every result must be analyzed deeply before the next move.
+Mission:
+- Maximize `val_map50_95` on the canonical validation split for 4-class TBS detection (`B1`, `B2`, `B3`, `B4`).
+- Long-term ambition can stay high, but the next serious milestone is to break `0.30` with defensible evidence.
+
+This repository is not a free-form idea dump. It is a constrained research loop. Every experiment must change belief, not just consume GPU.
+
+Karpathy-style simplification for this repo:
+- there is one default live experiment file: `train.py`
+- there is one fixed evaluator path: `prepare.py`
+- there is one canonical metric ledger: `results.tsv`
+- raw logs must be kept under `logs/` for manual inspection, not discarded after summarization
 
 ---
 
-## Scientific Method (your operating loop)
+## 1. Source Of Truth
 
-```
-OBSERVE → HYPOTHESIZE → DESIGN → EXECUTE → ANALYZE → DOCUMENT → LOOP
-```
+When sources disagree, trust them in this order:
 
-Never skip a step. Never jump straight from "experiment finished" to "next experiment". Always analyze first.
+1. `results.tsv`
+2. `logs/`
+3. `train.py` and `prepare.py`
+4. `research/RESEARCH_MASTER.md`
+5. archived files under `research/archive/` and `scripts/archive/`
+
+Rules:
+- New empirical evidence overrides older prose.
+- A hypothesis in an old note is not a live priority unless current results still support it.
+- Never resurrect an old idea just because it once sounded plausible.
 
 ---
 
-## Step 1: OBSERVE — Deep Analysis Before Every Experiment
+## 2. Current Empirical State
 
-Before choosing anything to try, perform a thorough analysis. This is not optional.
+These are the facts the agent must start from.
 
-### 1a. Read all evidence
-```bash
-cat results.tsv
-cat rangkuman-progress/rangkuman.md
+### Dataset and evaluation
+
+- Canonical split:
+  - train: `2764`
+  - val: `604`
+  - test: `624`
+- Standard training set for current repo experiments is `Dataset-TrainTest`.
+- Evaluation must remain on the canonical validation split through `prepare.py`.
+- `val_map50_95` is the primary optimization target.
+
+### Best validated 4-class result
+
+- Historical best validated 4-class run in `results.tsv`:
+  - commit: `d9a3ded`
+  - model: `yolo11l`
+  - setup: `imgsz=640`, `batch=16`, `epochs=80`, `Dataset-TrainTest`
+  - `val_map50_95 = 0.269424`
+
+### Important interpretation
+
+- A single-class detector reached `0.390430`.
+- Therefore detection itself is not the main ceiling.
+- The main ceiling is 4-class discrimination, especially `B2` vs `B3`.
+
+### What the repo has already falsified
+
+- Long one-stage training is not the answer:
+  - `TIME_HOURS=2.0`, long-run `yolo11l` finished at `0.257974`, below best.
+- Crop-level two-stage pipelines are not competitive:
+  - stage1 + EfficientNet corrected eval: `0.167510`
+  - stage1 + DINOv2 flat corrected eval: `0.181088`
+  - stage1 + hierarchical partial eval: `0.177635`
+- Wide-context coarse classifier did not clear its own gate:
+  - best coarse accuracy `71.90%`, below `75%`
+- Label smoothing as a standalone YOLO tweak did not beat the best 4-class baseline:
+  - `yolo11s label_smooth=0.1 40ep` reached `0.255244`
+- Tiled training on the current setup failed:
+  - `0.239204`
+
+### Important distinction
+
+- The checked-in `train.py` is the current fast probing surface.
+- It is not the historical best configuration.
+- That is intentional: the repo now prefers short, information-dense screening runs over long brute-force optimization.
+
+---
+
+## 3. What Is Closed And What Is Still Open
+
+### Closed directions
+
+Do not spend GPU on these again unless a human explicitly reopens them.
+
+- Flat 4-class YOLO retuning with only small hyperparameter or augmentation changes
+- Repeating longer one-stage runs just to squeeze more epochs
+- Bigger flat YOLO variants as the main strategy (`yolo11l/x`, `yolov9e`) without a new formulation
+- Crop-only two-stage pipelines that classify isolated boxes without preserving full-image context
+- Tiled training as previously implemented
+- Label smoothing as a standalone fix
+- "Try another seed / another LR / another batch" as the main idea
+
+### Open directions
+
+Only these kinds of directions are still reasonable:
+
+- Formulations that preserve full-image context while changing how class evidence is represented
+- Detector changes that materially alter the model, not just tune knobs
+- Fine-grained formulations targeted at `B2/B3` that are genuinely new relative to repo history
+- Multi-view or tree-level context if implemented in a principled way
+- New evaluation-compatible detectors or losses that can be compared fairly on the same val split
+
+The burden of proof is high. "Different code" is not enough. The intervention must be conceptually different from what already failed.
+
+---
+
+## 4. Non-Negotiable Rules
+
+### Rule 1: No blind tuning
+
+Every experiment must state:
+- hypothesis
+- mechanism
+- success criterion
+- kill criterion
+- what will be concluded if it fails
+
+If you cannot write that in plain language, do not run the experiment.
+
+### Rule 2: Default to short screening runs
+
+Default search budget:
+- `TIME_HOURS <= 0.5`
+- `EPOCHS <= 40`
+- small or medium models only
+
+A longer or heavier run is allowed only after a short run already shows clear signal.
+
+### Rule 3: One coherent change at a time
+
+- Prefer a single conceptual change per experiment.
+- Multiple code edits are acceptable only if they belong to one formulation.
+- Do not bundle unrelated tweaks into one run.
+
+### Rule 4: Do not repeat closed branches
+
+- If a branch has already failed, do not retry it through cosmetic variants.
+- "Same idea but slightly different hyperparameters" still counts as repetition.
+- If you believe a failed branch should be reopened, write the reason explicitly.
+
+### Rule 5: Preserve evaluation integrity
+
+- Do not change the validation split.
+- Do not report approximated `mAP50-95`.
+- Do not compare metrics across different evaluators as if they are equivalent.
+- If evaluation logic changes, state it clearly and re-baseline.
+
+### Rule 6: Failures are first-class results
+
+- Record failures.
+- Do not cherry-pick.
+- A discarded branch is still useful if it changes project priors.
+
+### Rule 7: Update beliefs immediately
+
+- When evidence contradicts current text in this file, update this file.
+- `program.md` should describe the current state of belief, not the history of every belief ever held.
+
+### Rule 8: Keep the repo executable
+
+- Do not write instructions that point to missing files.
+- Do not tell future agents to use paths that no longer exist.
+- Prefer current active files over archived files.
+
+### Rule 9: Use the tracked remote correctly
+
+- Do not hardcode `origin master`.
+- Use `git push` or the current tracked remote.
+- If the branch tracks `userrepo/master`, let Git use that.
+
+### Rule 10: Do not hide uncertainty
+
+- Separate facts from inferences.
+- If a claim is speculative, label it as speculative.
+- If an experiment result is partial, say it is partial.
+
+---
+
+## 5. File Roles
+
+These files matter during normal operation:
+
+- `train.py`
+  - primary experiment surface for standard YOLO runs
+  - short probing configuration lives here
+- `prepare.py`
+  - dataset verification and evaluation harness
+  - treat as read-only unless fixing a confirmed bug
+- `results.tsv`
+  - canonical machine-readable experiment ledger
+- `logs/`
+  - raw run outputs
+- `progress.png`
+  - visual summary regenerated from `results.tsv`
+- `research/RESEARCH_MASTER.md`
+  - long-form research summary and consolidated history
+- `configs/model_variants.yaml`
+  - archived model variants and references
+- `scripts/toolbox.py`
+  - consolidated helper entrypoint for archived utilities
+
+Default editing policy:
+- For normal experiments, edit `train.py` only.
+- Do not edit `prepare.py`, `results.tsv`, or other code files as part of the experiment itself.
+- Only append telemetry after the run is complete.
+- A multi-file formulation is an exception path, not the default path.
+- Do not casually edit archived material.
+
+---
+
+## 6. The Working Loop
+
+This is the required loop for the autoresearch system.
+
+```text
+SYNC -> OBSERVE -> HYPOTHESIZE -> DESIGN -> IMPLEMENT -> EXECUTE -> ANALYZE -> RECORD -> UPDATE PRIORS -> SYNC
+```
+
+Never skip `ANALYZE`.
+Never skip `RECORD`.
+Never move to the next run without deciding what the current run taught you.
+
+---
+
+## 7. Detailed Operating Procedure
+
+### Step 0: SYNC
+
+Before doing research work:
+
+```powershell
+git status --short
+git pull --ff-only
+```
+
+Then read:
+
+```powershell
+Get-Content results.tsv | Select-Object -Last 20
 git log --oneline -20
 ```
 
-### 1b. Analyze per-class performance
-Parse the run.log of the most recent experiment for per-class metrics:
-```bash
-grep -E "map50_B|map50_95_B|val_map" run.log | tail -20
+If the task depends on prior deep history, also inspect:
+
+```powershell
+Get-Content research\RESEARCH_MASTER.md -TotalCount 200
 ```
-Ask yourself:
-- Which class is worst? By how much?
-- Did the last experiment help or hurt each class individually?
-- Is the gap between best and worst class growing or shrinking?
-- Is precision or recall the limiting factor?
 
-### 1c. Diagnose the bottleneck
-Based on evidence, classify the current bottleneck:
-- **Label noise** (B2/B3 confusion): precision low, B2 mAP low
-- **Small object detection** (B4): recall low, B4 mAP low
-- **Class imbalance** (B3 dominates): model biased toward B3
-- **Model capacity**: loss still high at end of training
-- **Overfitting**: val loss diverges from train loss
-- **Data quantity**: learning curve not saturated
-- **Resolution**: objects too small at 640px
+What you must establish before acting:
+- current best validated result
+- latest failed branch
+- whether the proposed idea is already closed
 
-Write your diagnosis in `experiment-journal.md` before proceeding.
+### Step 1: OBSERVE
 
-### 1d. Review what has NOT worked
-Read the full history. Do not repeat. Do not assume that a similar-but-different tweak will work if the underlying idea has been disproven.
+Diagnose the bottleneck from evidence, not intuition.
 
----
+Minimum observation checklist:
+- What is the current best comparable score?
+- Is the proposed idea already represented in `results.tsv`?
+- Which class is likely limiting overall performance?
+- Does the new idea preserve full-image context or throw it away?
+- Does the idea attack the actual bottleneck, or only move knobs?
 
-## Step 2: HYPOTHESIZE — Form a Falsifiable Hypothesis
+If needed, inspect specific logs in `logs/` for per-class metrics and training dynamics.
 
-A good hypothesis has the form:
-> "If [intervention], then [metric] will [change] because [mechanism]."
+### Step 2: HYPOTHESIZE
 
-Examples of GOOD hypotheses:
-- "If I oversample B4 images 3x, then B4 mAP50-95 will increase because the model sees more B4 examples per epoch, reducing class imbalance."
-- "If I use label correction on high-confidence B2/B3 mismatches, then val_map50_95 will increase because the model is no longer punished for correct predictions on mislabeled images."
-- "If I use RT-DETR (transformer), then B2/B3 disambiguation will improve because self-attention captures global context that CNNs miss."
+Write a falsifiable hypothesis in this form:
 
-Examples of BAD hypotheses (do not do these):
-- "Let me try cls=1.5" (no mechanism, no expected effect)
-- "Let me try imgsz=960" (no reason why 960 would be better than 1024 or 640)
-- Anything that is just a minor variation of something already tried
+> If I change X, then Y should improve by Z because mechanism M.
 
-Write the hypothesis in `experiment-journal.md`.
+Good example:
 
----
+> If I add a detector-side formulation that preserves full-image context while specializing the `B2/B3` decision boundary, then `val_map50_95` should improve because the current ceiling appears to come from fine-grained class discrimination, not object finding.
 
-## Step 3: DESIGN — Plan the Experiment
+Bad examples:
 
-Before coding, answer these questions in `experiment-journal.md`:
-1. What exactly will I change? (files, parameters, scripts)
-2. What is the expected direction of change and why?
-3. What is my success criterion? (e.g., "val_map50_95 > 0.27 OR B4 mAP50-95 increases by >0.01")
-4. What will I conclude if it fails? (falsification plan)
-5. Are there confounding factors I should control for?
+- "Try a bigger model"
+- "Try a different LR"
+- "Try 60 epochs"
 
----
+### Step 3: DESIGN
 
-## Step 4: EXECUTE — Implement and Run
+Before coding, define:
+- files to edit
+- exact command to run
+- success criterion
+- kill criterion
+- what failure would mean
 
-You have **full autonomy** to:
-- Create new Python scripts
-- Modify any file in the repo including train.py (not just constants)
-- Create new datasets (balanced, tiled, cleaned, synthetic)
-- Install Python packages with `pip install`
-- Create new data.yaml files pointing to new datasets
-- Modify prepare.py if needed for new dataset paths
-- Train any model in Ultralytics (YOLOv9c, YOLOv9e, RT-DETR, etc.)
-- Build two-stage or ensemble pipelines
-- Use foundation models (SAM2, GroundingDINO, CLIP, DINOv2)
+Default success criterion:
+- beats the current comparable baseline, or
+- provides strong class-specific signal that justifies a follow-up
 
-**You are NOT limited to editing constants in train.py.** That was a beginner constraint. You are a scientist now.
+Default kill criterion:
+- no credible improvement within the short screening budget
 
-Commit all code before training:
-```bash
+### Step 4: IMPLEMENT
+
+Implementation rules:
+- keep the blast radius small
+- preserve reproducibility
+- comment only where needed
+- avoid hidden changes
+
+Normal case:
+- edit `train.py` only
+
+Exception case:
+- only if a human explicitly asks for a new formulation, create a narrowly scoped script or module
+- keep evaluation compatible with `prepare.py`
+- do not break the default workflow
+
+Commit before launching a long run if code changed materially:
+
+```powershell
 git add -A
-git commit -m "exp: <hypothesis summary>"
+git commit -m "exp: <short hypothesis>"
 ```
 
-Run training (adapt command if using a different script):
-```bash
-uv run train.py 2>&1 | tee run.log
+### Step 5: EXECUTE
+
+Standard YOLO run:
+
+```powershell
+uv run train.py 2>&1 | Tee-Object -FilePath logs\<timestamp>_<slug>.log
 ```
 
----
+Alternative formulation:
+- use the specific script required by the hypothesis
+- still capture a raw log under `logs/`
 
-## Step 5: ANALYZE — Deep Post-Experiment Analysis
+Do not run a long job if the formulation has not earned that budget with a short probe first.
 
-After every run, do NOT immediately move to the next experiment. Analyze:
+### Step 6: ANALYZE
 
-### 5a. Extract full metrics
-```bash
-grep -E "val_map50|precision|recall|peak_vram|map50_B|map50_95_B|total_seconds" run.log | tail -20
+After every run, answer:
+- Did the main metric improve?
+- Did the result beat the correct baseline?
+- Which class moved?
+- Was the observed behavior consistent with the hypothesis?
+- Does this branch deserve another iteration, or is it closed?
+
+Analysis rules:
+- compare against the right baseline, not a weaker or unrelated one
+- distinguish "better than current probe config" from "better than historical best"
+- partial classifier accuracy is not the same as pipeline success
+
+### Step 7: RECORD
+
+Mandatory outputs after a completed experiment:
+
+1. Append a row to `results.tsv`
+2. Keep the raw log in `logs/`
+3. Regenerate `progress.png` if the run is part of the comparable progress chart
+
+Log retention rule:
+- raw logs are part of the research record
+- do not delete them after extracting metrics
+- prefer timestamped names under `logs/` so a human can audit the full run manually later
+
+Progress command:
+
+```powershell
+uv run python plot_progress.py
 ```
 
-### 5b. Per-class breakdown
-- Which class improved? Which regressed?
-- Is B2/B3 confusion decreasing?
-- Is B4 recall improving?
+Optional but recommended:
+- update `research/RESEARCH_MASTER.md` when a branch materially changes belief
 
-### 5c. Training dynamics
-```bash
-# Check if model was still improving or plateaued
-grep -E "^\s+[0-9]+/[0-9]+" run.log | tail -20
-```
-- Did early stopping fire? At what epoch?
-- Was loss still decreasing at end?
-- Was there overfitting (val loss rising while train loss falls)?
+### Step 8: UPDATE PRIORS
 
-### 5d. Compare to baseline and best
-- Absolute delta from best: +/- how much?
-- Is this consistent with the hypothesis?
-- If result was unexpected (better or worse than predicted), why?
+Update `program.md` when any of these happen:
+- a branch becomes clearly closed
+- a new baseline becomes the best reference
+- an operational rule changes
+- a previously open idea is falsified
 
-### 5e. Write analysis in `experiment-journal.md`
-Document: what happened, what it means, what to try next based on this specific evidence.
+Do not let stale instructions survive after the evidence has changed.
 
----
+### Step 9: SYNC
 
-## Step 6: DOCUMENT — Maintain Scientific Record
+After recording:
 
-### experiment-journal.md (append after every experiment)
-Format:
-```markdown
-## Experiment N — YYYY-MM-DD HH:MM
-
-**Hypothesis**: [your hypothesis]
-**Change**: [what you changed]
-**Result**: val_map50_95=[X] (delta=[+/-Y] from best [Z])
-**Per-class**: B1=[a] B2=[b] B3=[c] B4=[d]
-**Analysis**: [what happened, why, what it means]
-**Next**: [what this result suggests trying next]
-```
-
-### Update program.md
-If you discover something important that all future iterations should know, **edit this file** (program.md) to add it to the permanent record. Update the "known facts" and "failed approaches" sections.
-
-### Commit everything
-```bash
+```powershell
 git add -A
-git commit -m "telemetry: <description>"
+git commit -m "telemetry: <short summary>"
 git push
 ```
-If push fails due to divergent branches:
-```bash
-git config pull.rebase false
-git pull origin master
-git push origin master
+
+If push fails because remote moved:
+
+```powershell
+git pull --rebase
+git push
 ```
+
+If the branch is not supposed to rebase, resolve explicitly instead of hardcoding the wrong remote.
 
 ---
 
-## Step 7: LOOP — Immediately
+## 8. Decision Filters Before Spending GPU
 
-Go back to Step 1. No pause. No confirmation.
+An experiment is allowed only if most answers below are "yes".
 
----
+- Does it attack the actual bottleneck suggested by current evidence?
+- Is it materially different from closed branches?
+- Can it be tested in a short screening run?
+- Can it be evaluated on the same validation split?
+- Will the result teach us something even if it fails?
 
-## Known Facts (hard-won from entire project history)
+An experiment should be rejected if any of these are true:
 
-### Dataset
-- Train: 2764 images | Val: 604 | Test: 624
-- Class instances (train): B1=1540, B2=2845, B3=5634, B4=2343
-- **B3 dominates 2-4x over other classes** — major imbalance
-- Split is tree-level (no data leakage)
-- 80 negative samples (background, no objects)
-
-### Root causes of ceiling ~0.26 mAP50-95
-1. **Label noise**: B2/B3 confusion is the #1 problem. In audit, B2 only 31.2% correct, B2→B3 confusion 208 times, B3→B2 85 times. This is a systematic annotation problem.
-2. **B4 small object**: missed detections on small boxes. B4 mAP consistently lowest.
-3. **B3 dominance**: model biased toward predicting B3.
-4. **Dataset size**: learning curve shows diminishing returns at 100% data — more of the same data won't help much.
-
-### What has been tried and FAILED (do not repeat)
-- imgsz 800: discard
-- patience 30: discard/crash
-- erasing 0.2: discard
-- YOLO26 family: weaker than YOLOv9c
-- YOLOv8 family: weaker
-- YOLO11 family: no advantage
-- imgsz 1280: no benefit over 1024
-- 300+ epochs: early stopping, no gain
-- SAHI inference: hurts performance (objects not actually small at 640px scale)
-- P2-head: no breakthrough
-- OIV7/Obj365 pretrained: no breakthrough
-- Advanced augmentation combos (copy_paste, mixup, degrees): no breakthrough
-- Optimizer auto: worse than AdamW
-- SGD/MuSGD: weaker than AdamW
-- Two-stage pipeline: marginal in prior work
-- cos_lr: small improvement (current best config)
-- imgsz 1024 batch 8: KEEP — small improvement (current best: 0.25988)
-- Loss weight tuning (BOX=10, CLS=1.5, DFL=2.0) with imgsz=1024: DISCARD — 0.2566, more aggressive loss weighting hurt performance
-- Class-balanced dataset (B1/B4 oversampled 2-3x with geometric flip, 2764→6367 images): DISCARD — 0.2476. Conclusion: oversampling with flips adds noise not signal; within time budget more images = fewer epochs = underfitting; B4's bottleneck is NOT data quantity but resolution/context
-- YOLOv9e imgsz=1024 batch=4: DISCARD — 0.2295. Too large to converge in 20-min budget. Model capacity is NOT the bottleneck.
-- Label noise correction via high-conf model disagreement: NOT VIABLE — model can only flag corrections at conf>=0.5 but at that level it may itself be wrong. At conf>=0.7 there are 0 reliable corrections. Label noise is real but cannot be auto-corrected with current model accuracy.
-
-**KEY INSIGHT FROM EXPERIMENTS 1-5**: The ceiling is a DATA QUALITY problem, not a hyperparameter or model architecture problem. The best single-change improvement was imgsz=1024 (+0.002). All other approaches tried so far have failed or hurt performance.
-
-**KEY INSIGHT FROM EXPERIMENTS 11-13**: yolo11l at imgsz=640 batch=16 is the best single-epoch-efficiency config. With TIME_HOURS=0.33, only 21 epochs are completed — far from convergence. The learning curve is NOT saturated. TIME_HOURS=2.0+ could unlock 100+ epochs and break the 0.27 ceiling.
-
-**TWO-STAGE PIPELINE BUG (fixed 2026-03-15)**: The previous two_stage_eval.py reported mAP50-95 as mAP50 × 0.47 (a hardcoded approximation). This is NOT COCO mAP50-95. The "0.169" two-stage result was not a real mAP50-95. Fixed to compute proper COCO mAP50-95 using 10 IoU thresholds (0.50-0.95).
-
-### Current best config
-- yolo11l, imgsz=640, batch=16, AdamW, cos_lr=True, erasing=0.4, EPOCHS=80, Dataset-TrainTest
-- val_map50_95 = 0.269424 (commit d9a3ded)
-- B1=0.440, B2=0.216 (still the main bottleneck), B3=0.270, B4=0.152
-
-### KEY FINDING (2026-03-15): TIME BUDGET was the bottleneck
-- TIME_HOURS=0.33 → only ~21 epochs for yolo11l on 3388-image train set
-- EPOCHS=80 was set but time limit hit first — model never converged
-- Need TIME_HOURS=2.0+ to get 100+ epochs and proper convergence
-- AdamW consistently better than SGD for this task
-
-### TWO-STAGE PIPELINE — CONCLUSIVELY FAILED (2026-03-15)
-All two-stage variants tested, all worse than single-stage 0.269:
-- stage1+EfficientNet: 0.1675
-- stage1+DINOv2-CE (flat): 0.1811
-- stage1+DINOv2-CORN (ordinal): 0.1376
-- stage1+DINOv2-CE (hierarchical B1/B23/B4 + binary B2/B3): 0.1776
-- stage1+DINOv2-SupCon (contrastive): training abandoned, no signal
-**CONCLUSION: Do NOT attempt any more two-stage pipeline variants. The B2/B3 boundary is not solvable at the crop level with any classifier. The distinction requires full-image context.**
+- it is just another hyperparameter tweak on a closed branch
+- it needs a long run before showing any signal
+- it throws away context that history suggests is necessary
+- it cannot be compared fairly to existing results
 
 ---
 
-## PERMANENT EXPERIMENT RULES (set by researcher, mandatory for all agents)
+## 9. What The Agent Should Do By Default
 
-### Rule 1 — Keep experiments SHORT
-- **MAX 40 epochs per experiment. TIME_HOURS=0.5.**
-- If the solution is correct, signal is visible within 20-30 epochs.
-- If no clear improvement (>2% absolute) after 20 epochs → kill and move on.
-- NEVER run 80-300 epoch experiments to squeeze 0.01% extra. That is wasted GPU time.
-- We are hunting for experiments that show **5-15% improvement**, not 0.01%.
+Default behavior for a normal research turn:
 
-### Rule 2 — Small or Medium models ONLY
-- Dataset = ~4K images. Large models do NOT generalize better on small datasets.
-- **YOLO: yolo11s.pt or yolo11m.pt ONLY.** Never yolo11l, yolo11x, yolov9e.
-- **RF-DETR: RFDETRSmall only.**
-- **DINOv2: ViT-S (dinov2-small) only.** Not ViT-B or ViT-L.
-- Classifiers: EfficientNet-B0, ResNet-34 — smallest meaningful variant.
-- Rationale: small model trains 2x faster → run 2x more experiments in same time.
-- Scale up ONLY after confirming a working approach with a small model.
+1. sync and read the last results
+2. identify one open question
+3. design one falsifiable experiment
+4. implement the minimum change needed in `train.py` only
+5. run a short comparable experiment
+6. analyze and classify the branch as keep or discard
+7. record everything
+8. update priors if the evidence changed them
 
-### Rule 3 — No wasted iterations
-- Do NOT repeat anything in the "FAILED" list above.
-- Do NOT tweak hyperparameters of failed approaches.
-- Each experiment must test a fundamentally different approach.
-- If an approach has been tried and failed, abandon it entirely.
+Default behavior is not:
+
+- search randomly
+- chase tiny gains through knob turning
+- repeat old failures
+- leave conclusions only in chat
 
 ---
 
-## Priority Research Directions (evidence-based + cutting-edge literature 2024-2026)
+## 10. Current Operating Guidance
 
-Ordered by expected impact. These go BEYOND hyperparameter tuning — they are architectural, data pipeline, and training paradigm changes.
+As of the current repo state:
 
----
+- Treat the historical `0.269424` run as the 4-class reference to beat.
+- Treat the `0.390430` single-class result as evidence that detection quality is not the primary problem.
+- Treat crop-level two-stage classification as closed unless a human explicitly reopens it.
+- Treat long brute-force one-stage training as closed.
+- Treat the checked-in `train.py` as a fast screening surface, not as proof that the repo now believes `yolo11s + label_smoothing` is best.
 
-### TIER 1 — INPUT MODALITY CHANGE (Highest novelty, untested)
-
-#### T1-A: RGB-D 4-Channel Input via Synthetic Depth (Depth Anything V2)
-**Hypothesis**: Palm oil bunches at different ripeness stages may have slightly different 3D profiles. Adding a depth channel gives the model a 4th signal for discrimination.
-**Evidence**: YOLO-depth paper (ScienceDirect 2025) shows +4.9% mAP50-95 on detection tasks by adding synthetic depth as 4th channel.
-**Implementation**:
-```bash
-pip install depth-anything-v2
-# OR: pip install transformers  # HuggingFace pipeline
-```
-1. Create `generate_depth.py` — load Depth Anything V2 (ViT-S for speed), run on all train/val/test images, save as 16-bit grayscale PNGs in `Dataset-RGBD/depth/`
-2. Create `rgbd_dataset.py` — custom Dataset that loads RGB + depth, stacks as 4-channel tensor
-3. Modify `train.py` to use custom 4-channel dataloader
-4. Modify first Conv layer to accept 4 channels (weight inflation):
-```python
-# In training setup:
-first_conv = model.model[0].conv
-old_w = first_conv.weight.data  # [out, 3, k, k]
-new_w = torch.zeros(old_w.shape[0], 4, *old_w.shape[2:])
-new_w[:, :3] = old_w
-new_w[:, 3:4] = old_w.mean(dim=1, keepdim=True)  # depth channel init
-first_conv.weight = nn.Parameter(new_w)
-```
-5. Update model YAML `ch: 3` → `ch: 4`
-**Expected**: +2-5% mAP if depth helps discriminate B4 (protruding, closer) from B1/B2/B3.
+That distinction matters:
+- `train.py` answers "what is cheap to test now?"
+- `results.tsv` answers "what has actually won so far?"
 
 ---
 
-### TIER 2 — ARCHITECTURE MODIFICATION
+## 11. Scientific Integrity
 
-#### T2-A: P2 Extra Detection Head (Best ROI for Small Objects)
-**Hypothesis**: B4 is missed because standard YOLOv9c has 3 detection scales (P3/P4/P5). Adding a P2 head (finer scale) gives the model a dedicated head for small objects.
-**Evidence**: Consistently reported +3-8% for small objects across SOD-YOLOv8, SMA-YOLO, FDM-YOLO papers (2024-2025).
-**Implementation**: Clone Ultralytics, install editable (`pip install -e .`), modify `yolov9c.yaml`:
-- Add a P2 feature extraction layer before P3
-- Add a 4th `Detect` head at P2 scale
-- Edit `ultralytics/nn/modules/__init__.py` if adding custom modules
-This is the single most-reported architecture improvement for small object detection.
+- Report failures honestly.
+- Use the same evaluator for comparable claims.
+- Keep claims proportional to evidence.
+- Update beliefs when evidence changes.
+- Prefer being correct over being optimistic.
 
-#### T2-B: CBAM Attention in Backbone
-**Hypothesis**: Channel + spatial attention helps the backbone focus on discriminative features for B2/B3.
-**Evidence**: C2f-CBAM variants show +3-6% mAP on fine-grained detection tasks.
-**Implementation**: Add CBAM module to Ultralytics:
-```python
-# ultralytics/nn/modules/block.py
-class CBAM(nn.Module):
-    def __init__(self, c1, reduction=16, kernel_size=7):
-        super().__init__()
-        self.ca = ChannelAttention(c1, reduction)
-        self.sa = SpatialAttention(kernel_size)
-    def forward(self, x):
-        return self.sa(self.ca(x))
-
-class C2f_CBAM(nn.Module):
-    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
-        super().__init__()
-        self.c2f = C2f(c1, c2, n, shortcut, g, e)
-        self.cbam = CBAM(c2)
-    def forward(self, x):
-        return self.cbam(self.c2f(x))
-```
-Register in `__init__.py`, use in YAML as `C2f_CBAM`.
-
-#### T2-C: RF-DETR (DINOv2 backbone + Detection Head)
-**Hypothesis**: DINOv2 ViT backbone has vastly superior visual representations compared to CNN backbone, especially for fine-grained class disambiguation.
-**Evidence**: RF-DETR-Medium achieves 54.7% mAP on COCO, outperforms YOLO11 variants. On domain-specific fine-tuning tasks, DINOv2-based models show stronger gains.
-```bash
-pip install rfdetr
-```
-```python
-from rfdetr import RFDETRBase
-model = RFDETRBase()
-model.train(dataset_dir="Dataset-YOLO/", epochs=40, batch_size=8, lr=1e-4)
-```
-Note: eval metrics must be compared on same val set. Adapt `evaluate_model()` in prepare.py.
-
-#### T2-D: Deformable Convolutions (DCNv2) in Backbone
-**Hypothesis**: Deformable conv adapts receptive field to object shape, better for irregularly-shaped palm bunches.
-**Implementation**: Replace C2f blocks in the last 2 backbone stages with DCNv2 variants. Use `torchvision.ops.deform_conv2d`.
-
----
-
-### TIER 3 — TRAINING PARADIGM CHANGE
-
-#### T3-A: Contrastive Loss on RoI Features (B2/B3 Disambiguation)
-**Hypothesis**: Standard cross-entropy loss doesn't explicitly push B2 and B3 embeddings apart. Adding SupCon loss on per-object features creates a more discriminative embedding space.
-**Evidence**: FGA-YOLO (ScienceDirect 2024) uses instance-level contrastive learning for fine-grained aircraft detection. Class prototype contrastive learning (arXiv 2510.11204) shows strong gains on fine-grained tasks.
-```bash
-pip install pytorch-metric-learning
-```
-```python
-from pytorch_metric_learning.losses import SupConLoss
-from pytorch_metric_learning.miners import BatchHardMiner
-
-class ContrastiveDetectionTrainer(DetectionTrainer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.proj_head = nn.Sequential(nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 128))
-        self.supcon = SupConLoss(temperature=0.07)
-        self.miner = BatchHardMiner()
-
-    def compute_loss(self, preds, batch):
-        det_loss, items = super().compute_loss(preds, batch)
-        # RoI-pool features → project → normalize → SupCon
-        # ... (see experiment-journal.md for full implementation)
-        return det_loss + 0.1 * con_loss, items
-```
-Start contrastive weight at 0, ramp linearly to 0.1 after epoch 10 (burn-in).
-
-#### T3-B: Semi-Supervised with EfficientTeacher
-**Hypothesis**: Test set (624 images) is unlabeled ground truth we can exploit. Adding pseudo-labels from test set may expand effective training data.
-```bash
-pip install efficientteacher  # Alibaba Research
-```
-Mean Teacher framework: student trained on labeled + pseudo-labeled data, teacher is EMA of student. FlexMatch for adaptive per-class thresholds.
-
-#### T3-C: Label Smoothing + Varifocal Loss
-**Hypothesis**: Hard labels for ambiguous B2/B3 create gradient conflicts. Soft labels reduce penalty for near-miss predictions.
-**Implementation** (trivial in Ultralytics):
-```python
-model.train(data='data.yaml', label_smoothing=0.1, use_vfl=True)
-```
-Or override `v8DetectionLoss` to use GHM-C loss:
-```bash
-# GHM loss: gradient harmonizing mechanism, beats focal loss by 0.8 mAP (AAAI 2019)
-pip install mmdet  # has GHM implementation
-```
-
-#### T3-D: Asymmetric Loss (ASL) for Class Imbalance
-```bash
-pip install git+https://github.com/Alibaba-MIIL/ASL.git
-```
-Different focal gamma for positives (γ+=0) vs negatives (γ-=4), plus hard thresholding of very-low-confidence negatives. Particularly effective for multi-class imbalance (B3 dominates).
-
----
-
-### TIER 4 — DATA PIPELINE CHANGE
-
-#### T4-A: Tiled Training Dataset for B4
-**DIFFERENT from SAHI inference** (which failed). This is about training data.
-Cut training images into 640×640 tiles with 25% overlap → model trained on larger crops sees B4 objects much bigger.
-```python
-# make_tiled_dataset.py
-# For each image: slide window 640x640 stride 480
-# For each tile: keep labels whose center falls inside tile
-# Adjust coords to tile-relative, normalize
-# Save to Dataset-Tiled/
-# Val set: NOT tiled (evaluate on full images)
-```
-
-#### T4-B: CLIP-Based Label Cleaning
-```bash
-pip install git+https://github.com/openai/CLIP.git
-```
-Encode every GT crop with CLIP. Cluster with KMeans. B2 crops that CLIP assigns to B3 cluster → flag as potential mislabel. Soft-label or drop the most ambiguous.
-
-#### T4-C: Drop Ambiguous B2/B3 Training Samples
-Identify images with co-occurring B2+B3 in close proximity (annotation boundary zone). Drop top-N most ambiguous. Smaller but cleaner dataset.
-
-#### T4-D: Two-Stage Pipeline (Detector + Classifier)
-History shows single-class detector reaches mAP50-95=0.389 (vs multi-class 0.260).
-1. Create `Dataset-SingleClass/` — all labels as class 0
-2. Train YOLOv9c single-class → `stage1_best.pt`
-3. Crop all GT boxes → `Dataset-Crops/B1/ B2/ B3/ B4/`
-4. Train EfficientNet-B0 or DINOv2-based classifier on crops
-5. `two_stage_eval.py` → compute combined pipeline mAP
-
-#### T4-E: Pseudo-Labeling Test Set
-Run current best model on test set (624 images, unlabeled). High-confidence predictions (conf>0.7) → pseudo-labels. Add to training set. Retrain.
-
----
-
-### TIER 5 — MOST RADICAL
-
-#### T5-A: Write Custom YOLO Training Loop from Scratch
-Bypass Ultralytics entirely. Write a clean PyTorch training loop with:
-- Custom focal loss per class with different γ for B1/B2/B3/B4
-- Custom sampler that ensures each batch has balanced B2/B4 examples
-- Contrastive auxiliary head baked in from epoch 1
-- EMA teacher for pseudo-labeling baked in
-This gives full control over every loss term and gradient.
-
-#### T5-B: Knowledge Distillation from Ensemble Teacher
-Train 3 different model configs (YOLOv9c, RT-DETR, YOLOv9c+CBAM).
-Average their soft output probabilities as teacher targets.
-Train a clean YOLOv9c student using these soft labels.
-Soft labels encode inter-class similarity (B2 "softly" overlaps B3) → better calibration.
-
-#### T5-C: Style Transfer for Domain Augmentation (Damimas → Lonsum)
-Damimas has 2764 train images. Lonsum has only ~276.
-Use AdaIN style transfer to generate Lonsum-style versions of Damimas images.
-This helps model generalize across the two varieties.
-```bash
-pip install stylegan3  # or use simple AdaIN implementation
-```
-
-#### T5-D: GroundingDINO Auto-Annotation for New Data
-```bash
-pip install groundingdino-py
-```
-Text prompts: "oil palm fruit bunch", "ripe palm fruit", "unripe palm fruit"
-Auto-annotate any unlabeled images. Can generate 500-1000 new pseudo-labeled training images.
-
----
-
-### Implementation Priority Order (evidence-based)
-
-1. **T4-A Tiled Dataset** — fastest to implement, directly addresses B4 (mAP 0.140)
-2. **T2-A P2 Head** — strongest architecture evidence for small objects
-3. **T3-C Label Smoothing** — trivial 1-line change, should always be on
-4. **T3-A Contrastive Loss** — directly addresses B2/B3 root cause
-5. **T2-C RF-DETR** — pip install + train, DINOv2 backbone may break ceiling
-6. **T1-A RGB-D** — novel, untested, potentially big if depth helps discrimination
-7. **T4-D Two-Stage Pipeline** — proven 0.389 in history, needs implementation
-8. **T3-B EfficientTeacher** — exploit unlabeled test set
-9. **T4-B CLIP Label Cleaning** — address label noise systematically
-10. **T5-A Custom Training Loop** — maximum control, highest effort
-
----
-
-## Scienfitic Integrity Rules
-
-1. **Never cherry-pick**: report all results, even failures
-2. **Never overfit to val**: if a change only helps val but hurts test, it's overfitting
-3. **Control for randomness**: if a result is surprising, verify with seed=42
-4. **Document the reasoning**: future-you needs to understand why past-you made a decision
-5. **Update priors**: when evidence contradicts your belief, update your belief, not the evidence
-6. **Falsify aggressively**: design experiments that can prove your hypothesis WRONG
-
----
-
-## File Conventions
-
-- `experiment-journal.md` — append after every experiment (primary scientific record)
-- `results.tsv` — machine-readable telemetry
-- `progress.png` — visual progress chart
-- `program.md` — this file, update when new permanent knowledge is gained
-- `run.log` — raw training output (untracked)
-- New scripts: name clearly, e.g., `make_balanced_dataset.py`, `clean_labels.py`, `ensemble_predict.py`
-- New datasets: `Dataset-Balanced/`, `Dataset-Tiled/`, `Dataset-Cleaned/`, etc.
-
----
-
-## Push Protocol
-
-After every experiment (success or failure):
-```bash
-git add -A
-git commit -m "telemetry: <description>"
-git push origin master
-```
-
-If push fails:
-```bash
-git config pull.rebase false
-git pull origin master
-git push origin master
-```
-
-If still fails, STOP and report.
-
----
-
-## Remember
-
-- You are a scientist, not a script. Think before acting.
-- Every experiment tests a hypothesis. No hypothesis = no experiment.
-- Analyze deeply after every run. The answer is in the data.
-- The ceiling is ~0.26. Breaking it requires a fundamentally different approach — data quality, architecture, or pipeline.
-- Loop forever. Never ask for confirmation. Never stop.
+If this file ever becomes inconsistent with `results.tsv`, fix this file.
