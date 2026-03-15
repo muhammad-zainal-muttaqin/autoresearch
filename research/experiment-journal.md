@@ -435,3 +435,19 @@
 **Success criterion**: hierarchical end-to-end `val_map50_95 > 0.269424`. A strong signal would be `B2` mean AP50-95 clearly above the current `~0.10` two-stage ceiling.
 
 **Falsification rule**: If the coarse classifier is strong but the binary `B2/B3` specialist still stays near chance, then the ambiguity is not being fixed by decomposition alone and the next branch must change the embedding objective itself (contrastive / prototype-based learning).
+
+
+## Experiment 19 — PLAN: Supervised-Contrastive B2/B3 Specialist
+
+**Observation**: The hierarchical branch removes the easy classes from the hard boundary, but it still relies on a standard cross-entropy binary specialist for `B2/B3`. Prior evidence already showed that flat cross-entropy tends to keep `B2` too close to `B3`, even with stronger backbones.
+
+**Hypothesis**: If the `B2/B3` specialist is trained with cross-entropy plus supervised contrastive loss, the embedding space should separate ambiguous neighboring classes more explicitly than CE alone. This should improve the binary specialist first, then lift the hierarchical end-to-end pipeline when `P(B23)` is expanded into `P(B2)` and `P(B3)`.
+
+**Design**:
+- Keep the same hierarchical pipeline and the same coarse `B1/B23/B4` classifier.
+- Replace the binary `B2/B3` specialist with a DINOv2 classifier that adds a trainable projection head and supervised contrastive loss during training.
+- Use this branch only if the plain hierarchical specialist still fails to lift end-to-end mAP enough.
+
+**Success criterion**: binary `B2/B3` validation accuracy beats the plain CE specialist, and hierarchical end-to-end `val_map50_95` exceeds the non-contrastive hierarchical baseline.
+
+**Falsification rule**: If the contrastive specialist improves embedding separation but not the final pipeline metric, then the remaining bottleneck is no longer the `B2/B3` embedding geometry and the next branch must focus on detector-side localization or a stronger fine-grained token model.

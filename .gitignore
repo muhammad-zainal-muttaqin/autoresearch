@@ -46,6 +46,9 @@ two_stage_dinov2_corn_run.log
 hier_coarse3_run.log
 hier_b23_run.log
 hier_eval_run.log
+hier_b23_supcon_run.log
+hier_sweep_run.log
+hier_eval_supcon_run.log
 
 # YOLO training outputs
 runs/

@@ -104,6 +104,54 @@ class DINOv2Classifier(nn.Module):
         return self.head(cls_embedding)
 
 
+class DINOv2SupConClassifier(nn.Module):
+    """Frozen DINOv2 backbone with CE logits plus a contrastive projector."""
+
+    def __init__(
+        self,
+        n_classes: int = N_CLASSES,
+        model_name: str = "facebook/dinov2-base",
+        freeze_backbone: bool = True,
+        proj_dim: int = 128,
+    ):
+        super().__init__()
+        transformers = ensure_transformers()
+        self.backbone = transformers.AutoModel.from_pretrained(model_name)
+        if freeze_backbone:
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+
+        hidden_size = self.backbone.config.hidden_size
+        self.embedder = nn.Sequential(
+            nn.Linear(hidden_size, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+        )
+        self.classifier = nn.Linear(512, n_classes)
+        self.projector = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, proj_dim),
+        )
+
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        outputs = self.backbone(pixel_values=x)
+        cls_embedding = outputs.last_hidden_state[:, 0, :]
+        return self.embedder(cls_embedding)
+
+    def forward_with_projection(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        features = self.encode(x)
+        logits = self.classifier(features)
+        proj = self.projector(features)
+        proj = nn.functional.normalize(proj, dim=1)
+        return logits, proj
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        features = self.encode(x)
+        return self.classifier(features)
+
+
 class CORALOrdinalHead(nn.Module):
     """Shared-weight ordinal head with K-1 thresholds."""
 
@@ -272,6 +320,8 @@ def load_stage2_classifier(checkpoint_path, device: torch.device) -> LoadedClass
         model = DINOv2OrdinalClassifier(n_classes=n_classes, model_name=model_name)
     elif classifier_type == "dinov2_corn":
         model = DINOv2CORNClassifier(n_classes=n_classes, model_name=model_name)
+    elif classifier_type == "dinov2_supcon":
+        model = DINOv2SupConClassifier(n_classes=n_classes, model_name=model_name)
     elif classifier_type == "dinov2_ce":
         model = DINOv2Classifier(n_classes=n_classes, model_name=model_name)
     else:
