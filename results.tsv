@@ -39,3 +39,4 @@ d9a3ded	0.268789	0.268789	0.510604	0.625442	9.8	discard	yolo11l epochs 100 train
 d9a3ded	0.552839	0.264376	0.513143	0.627492	9.8	discard	yolo11l SGD epochs 80 train+test (AdamW better)
 bbcc84a	0.343122	0.167510	0.000000	0.000000	0.0	discard	track=two-stage stage1+efficientnet corrected-eval
 63a852d	0.543667	0.257974	0.500905	0.628034	9.6	discard	yolo11l TIME=2h epochs=300 patience=50 AdamW train+test FINAL (discard)
+2796a26	0.543667	0.257974	0.500905	0.628034	9.6	discard	track=one-stage yolo11l TIME_HOURS=2.0 train+test long-run

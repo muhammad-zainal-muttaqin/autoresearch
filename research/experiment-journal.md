@@ -356,3 +356,18 @@
 
 
 
+
+
+## Experiment 14 — 2026-03-15 05:21 UTC
+
+**Hypothesis**: If the earlier one-stage ceiling was mostly caused by undertraining, then extending TIME_HOURS to 2.0 on the best YOLO11l train+test recipe will let the model converge and exceed the 0.269 baseline.
+
+**Change**: Keep the best known one-stage recipe but extend the run to TIME_HOURS=2.0 with yolo11l, Dataset-TrainTest, imgsz=640, batch=16, AdamW, and cos_lr.
+
+**Result**: val_map50_95=0.257974 (delta=-0.132456 from best 0.390430) — DISCARD
+
+**Per-class**: B1=0.429 B2=0.209 B3=0.256 B4=0.138
+
+**Analysis**: Long-run one-stage did not validate the time-budget hypothesis. Final val_map50_95=0.257974, best observed during the run was only 0.258, both below the existing 0.269424 baseline. Validation drifted downward after the early peak, so the long-budget one-stage branch is now excluded as a path to 0.40-0.50. The next step is stronger stage-2 classification.
+
+**Next**: Freeze the old one-stage branch and move GPU budget to DINOv2 stage-2 classification, then its ordinal follow-up if B2 remains weak.
