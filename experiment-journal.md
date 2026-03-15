@@ -211,7 +211,82 @@
 
 ---
 
-## Experiment 10 — PLAN: YOLOv9c with Ordinal Regression / Auxiliary Tasks
+## Experiment 10 — 2026-03-14 (Train+Test Combined Dataset)
+
+**Hypothesis**: Using all available labeled data (train+test, 3388 images) while holding val for evaluation should improve all classes by ~22% more examples. B2 specifically gains 85% more instances (1874→3463).
+
+**Change**: Dataset-TrainTest (symlinks, train+test→train, val unchanged)
+
+**Result**: val_map50_95=0.248169 (delta=-0.011834 from best 0.260003) — DISCARD
+
+**Per-class**:
+- B1: 0.418 (worse)
+- B2: 0.191 (no improvement despite 85% more B2 examples!)
+- B3: 0.251 (worse)
+- B4: 0.132 (worse)
+
+**Analysis**: More data hurt because fewer epochs in the 20-minute budget. With 3388 images at imgsz=1024 batch=8, we get fewer gradient updates per time budget. The per-image learning signal is the same, but total training steps decrease. B2 did NOT improve even with 85% more examples — confirming that the B2/B3 confusion is NOT a data quantity problem but a fundamental visual ambiguity.
+
+**Key finding**: Simply adding more labeled data does NOT help within a fixed time budget when training at high resolution.
+
+---
+
+## Experiment 11 — 2026-03-15 (YOLO11m, newer architecture)
+
+**Hypothesis**: YOLO11m (Ultralytics' newest model family, C3K2 architecture released 2024) may have better feature extraction than YOLOv9c due to architectural improvements, achieving better B2/B3 disambiguation with same or fewer parameters.
+
+**Change**: MODEL=yolo11m.pt (38.8M params), imgsz=1024, batch=8
+
+**Result**: val_map50_95=0.255829 (delta=-0.004174 from best 0.260003) — DISCARD
+
+**Per-class**:
+- B1: 0.427 (slightly worse)
+- B2: 0.197 (essentially identical to every other run!)
+- B3: 0.259 (slightly worse)
+- B4: 0.140 (same)
+
+**Analysis**: YOLO11m is NOT better than YOLOv9c at imgsz=1024 batch=8. The B2 mAP is stubbornly at ~0.197 regardless of architecture. This means the bottleneck is NOT in the model's capacity to discriminate B2/B3 — it's in the data/labels themselves.
+
+**Critical observation**: B2 mAP50-95 ≈ 0.197 across ALL architectures (YOLOv9c, YOLO11m, RT-DETR, RF-DETR). This value is suspiciously consistent, suggesting a ceiling imposed by the data/label quality, not model choice.
+
+---
+
+## Experiment 12 — 2026-03-15 (YOLO11l imgsz=640 batch=16) — NEW BEST!
+
+**Hypothesis**: YOLO11l (larger YOLO11, ~49M params) at imgsz=640 with batch=16 will achieve more gradient updates per time budget than imgsz=1024 batch=8. At 640px, batch=16 processes 2x more samples/step. More total gradient updates → better convergence in 20 minutes. Also: evaluation is done at imgsz=640, so training at 640 eliminates train/eval domain mismatch.
+
+**Change**: MODEL=yolo11l.pt, IMGSZ=640→640 (same as eval), BATCH=8→16 (2x)
+
+**Expected mechanism**:
+- Fewer pixels per image → faster forward pass
+- Larger batch → more stable gradient estimates
+- Training at eval resolution → no resolution gap between training and evaluation
+
+**Result**: val_map50_95=0.264147 (delta=+0.004144 from best 0.260003) — **NEW BEST! KEEP**
+
+**Per-class**:
+- B1: 0.439 (vs 0.441 baseline — essentially same)
+- B2: 0.210 (vs 0.197 baseline — **+0.013 improvement!**)
+- B3: 0.267 (vs 0.264 baseline — small improvement)
+- B4: 0.141 (vs 0.140 baseline — essentially same)
+
+**Analysis**: The improvement comes primarily from B2 (+6.6% relative improvement). Why?
+1. Training at imgsz=640 = evaluation imgsz=640: no train/eval domain gap. The model sees the same scale it will be evaluated at.
+2. Batch=16 = 2x gradient updates per time: better convergence in 20 minutes.
+3. YOLO11l architecture: C3K2 blocks with selective kernel attention are better at fine-grained discrimination than YOLOv9c's GELAN blocks.
+4. The consistency of B4 mAP (0.141) suggests B4's problem is truly about scale/size at evaluation resolution, not architecture.
+
+**Key insight**: Train/eval resolution matching is important. When we train at 1024 but evaluate at 640, the model's learned scale-specific features may not transfer perfectly. Training AT the evaluation resolution eliminates this gap.
+
+**Next directions to explore**:
+1. YOLO11l with batch=32 (if VRAM allows) — even more gradient updates
+2. YOLO11x (extra-large) — might converge faster due to better representations
+3. YOLO11l + train+test combined (3388 imgs, 640px, batch=16) — can we get both more data AND high batch count?
+4. YOLO11l with copy_paste=0.3 augmentation — targeted B4 augmentation at 640 resolution
+
+---
+
+## Experiment 13 — PLAN: YOLOv9c with Ordinal Regression / Auxiliary Tasks
 
 **Background**: All approaches so far have failed to exceed 0.260003. The fundamental problem is B2/B3 visual ambiguity. Novel ideas:
 

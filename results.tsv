@@ -26,4 +26,4 @@ fd7f85c	0.358712	0.168595	0.824295	0.744285	12.1	discard	two-stage pipeline mAP5
 5de4f7e	0.541700	0.248900	0.000000	0.000000	0.0	discard	rfdetr dinov2 windowed-small backbone (best mAP50-95=0.2489 epoch4)
 c3baa42	0.514186	0.248169	0.473942	0.620801	12.1	discard	train+test combined 3388 imgs (+22% data, more B2 examples)
 c3baa42	0.527457	0.255829	0.482502	0.620043	12.1	discard	yolo11m imgsz 1024 batch 8 (newer arch, B2 still 0.197)
-TBD	0.555280	0.264147	0.511481	0.628252	12.1	keep	yolo11l imgsz 640 batch 16 NEW BEST! B2=0.210
+3a557ad	0.555280	0.264147	0.511481	0.628252	12.1	keep	yolo11l imgsz 640 batch 16 NEW BEST! B2=0.210
