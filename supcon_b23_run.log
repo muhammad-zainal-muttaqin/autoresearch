@@ -1,0 +1,78 @@
+Device: cuda
+Dataset root: Dataset-Crops-B23
+
+Dataset sizes: train=8477, val=1931
+Classes: ['B2', 'B3']
+
+Building DINOv2 SupCon classifier...
+  Total params: 87.1M | Trainable: 0.6M
+
+Computing class weights...
+  Class counts: {'B2': 2844, 'B3': 5633}
+  Class weights: ['1.490', '0.752']
+
+Training for up to 50 epochs (2.0h budget)...
+Epoch   1/50 | train_loss=0.6257 | ce=0.6257 | supcon=5.0777 | val_loss=0.5631 | val_acc=70.4% | B2=57.0% B3=76.6% | supcon_w=0.00 | lr=9.99e-04 | 0s elapsed
+  *** Saved best model (val_acc=70.38%) ***
+Epoch   2/50 | train_loss=0.5711 | ce=0.5711 | supcon=5.1804 | val_loss=0.6352 | val_acc=64.9% | B2=76.1% B3=59.7% | supcon_w=0.00 | lr=9.96e-04 | 48s elapsed
+Epoch   3/50 | train_loss=1.1804 | ce=0.5609 | supcon=4.1301 | val_loss=0.6570 | val_acc=61.3% | B2=80.2% B3=52.5% | supcon_w=0.15 | lr=9.91e-04 | 95s elapsed
+Epoch   4/50 | train_loss=1.1683 | ce=0.5509 | supcon=4.1161 | val_loss=0.6131 | val_acc=66.8% | B2=74.2% B3=63.3% | supcon_w=0.15 | lr=9.84e-04 | 142s elapsed
+Epoch   5/50 | train_loss=1.1574 | ce=0.5407 | supcon=4.1115 | val_loss=0.6008 | val_acc=69.0% | B2=73.4% B3=67.0% | supcon_w=0.15 | lr=9.76e-04 | 190s elapsed
+Epoch   6/50 | train_loss=1.1517 | ce=0.5353 | supcon=4.1098 | val_loss=0.5547 | val_acc=72.0% | B2=66.3% B3=74.6% | supcon_w=0.15 | lr=9.65e-04 | 238s elapsed
+  *** Saved best model (val_acc=71.98%) ***
+Epoch   7/50 | train_loss=1.1386 | ce=0.5230 | supcon=4.1036 | val_loss=0.6716 | val_acc=61.9% | B2=79.9% B3=53.5% | supcon_w=0.15 | lr=9.52e-04 | 287s elapsed
+Epoch   8/50 | train_loss=1.1281 | ce=0.5131 | supcon=4.1002 | val_loss=0.5910 | val_acc=68.9% | B2=73.4% B3=66.8% | supcon_w=0.15 | lr=9.38e-04 | 336s elapsed
+Epoch   9/50 | train_loss=1.1333 | ce=0.5182 | supcon=4.1008 | val_loss=0.5872 | val_acc=69.9% | B2=68.3% B3=70.7% | supcon_w=0.15 | lr=9.22e-04 | 384s elapsed
+Epoch  10/50 | train_loss=1.1182 | ce=0.5038 | supcon=4.0955 | val_loss=0.6149 | val_acc=67.7% | B2=73.0% B3=65.2% | supcon_w=0.15 | lr=9.05e-04 | 432s elapsed
+Epoch  11/50 | train_loss=1.1189 | ce=0.5045 | supcon=4.0958 | val_loss=0.5379 | val_acc=73.1% | B2=58.7% B3=79.8% | supcon_w=0.15 | lr=8.85e-04 | 481s elapsed
+  *** Saved best model (val_acc=73.07%) ***
+Epoch  12/50 | train_loss=1.1049 | ce=0.4915 | supcon=4.0893 | val_loss=0.6041 | val_acc=68.2% | B2=71.1% B3=66.9% | supcon_w=0.15 | lr=8.65e-04 | 530s elapsed
+Epoch  13/50 | train_loss=1.0975 | ce=0.4847 | supcon=4.0856 | val_loss=0.5529 | val_acc=71.6% | B2=62.6% B3=75.8% | supcon_w=0.15 | lr=8.42e-04 | 578s elapsed
+Epoch  14/50 | train_loss=1.0870 | ce=0.4752 | supcon=4.0785 | val_loss=0.5766 | val_acc=69.8% | B2=67.3% B3=70.9% | supcon_w=0.15 | lr=8.19e-04 | 626s elapsed
+Epoch  15/50 | train_loss=1.0862 | ce=0.4743 | supcon=4.0799 | val_loss=0.6605 | val_acc=65.5% | B2=76.3% B3=60.5% | supcon_w=0.15 | lr=7.94e-04 | 674s elapsed
+Epoch  16/50 | train_loss=1.0744 | ce=0.4634 | supcon=4.0730 | val_loss=0.5922 | val_acc=69.6% | B2=67.5% B3=70.6% | supcon_w=0.15 | lr=7.68e-04 | 723s elapsed
+Epoch  17/50 | train_loss=1.0643 | ce=0.4542 | supcon=4.0676 | val_loss=0.6697 | val_acc=66.3% | B2=76.8% B3=61.4% | supcon_w=0.15 | lr=7.41e-04 | 771s elapsed
+Epoch  18/50 | train_loss=1.0602 | ce=0.4504 | supcon=4.0655 | val_loss=0.6427 | val_acc=67.8% | B2=73.7% B3=65.0% | supcon_w=0.15 | lr=7.13e-04 | 819s elapsed
+Epoch  19/50 | train_loss=1.0560 | ce=0.4465 | supcon=4.0632 | val_loss=0.5870 | val_acc=69.8% | B2=62.6% B3=73.1% | supcon_w=0.15 | lr=6.84e-04 | 868s elapsed
+Epoch  20/50 | train_loss=1.0473 | ce=0.4390 | supcon=4.0557 | val_loss=0.5908 | val_acc=71.1% | B2=67.8% B3=72.6% | supcon_w=0.15 | lr=6.55e-04 | 916s elapsed
+Epoch  21/50 | train_loss=1.0333 | ce=0.4259 | supcon=4.0494 | val_loss=0.6990 | val_acc=66.1% | B2=78.1% B3=60.6% | supcon_w=0.15 | lr=6.25e-04 | 964s elapsed
+Epoch  22/50 | train_loss=1.0250 | ce=0.4187 | supcon=4.0421 | val_loss=0.6369 | val_acc=68.0% | B2=68.6% B3=67.7% | supcon_w=0.15 | lr=5.94e-04 | 1012s elapsed
+Epoch  23/50 | train_loss=1.0247 | ce=0.4184 | supcon=4.0420 | val_loss=0.6311 | val_acc=68.0% | B2=69.0% B3=67.6% | supcon_w=0.15 | lr=5.63e-04 | 1061s elapsed
+Epoch  24/50 | train_loss=1.0214 | ce=0.4153 | supcon=4.0413 | val_loss=0.6118 | val_acc=69.6% | B2=68.0% B3=70.4% | supcon_w=0.15 | lr=5.32e-04 | 1109s elapsed
+Epoch  25/50 | train_loss=1.0017 | ce=0.3978 | supcon=4.0258 | val_loss=0.5719 | val_acc=72.8% | B2=46.1% B3=85.1% | supcon_w=0.15 | lr=5.00e-04 | 1157s elapsed
+Epoch  26/50 | train_loss=0.9942 | ce=0.3907 | supcon=4.0233 | val_loss=0.5961 | val_acc=71.4% | B2=62.4% B3=75.5% | supcon_w=0.15 | lr=4.69e-04 | 1205s elapsed
+Epoch  27/50 | train_loss=0.9964 | ce=0.3931 | supcon=4.0215 | val_loss=0.6251 | val_acc=70.0% | B2=66.7% B3=71.6% | supcon_w=0.15 | lr=4.38e-04 | 1254s elapsed
+Epoch  28/50 | train_loss=0.9843 | ce=0.3823 | supcon=4.0134 | val_loss=0.6709 | val_acc=67.8% | B2=71.2% B3=66.2% | supcon_w=0.15 | lr=4.07e-04 | 1302s elapsed
+Epoch  29/50 | train_loss=0.9686 | ce=0.3680 | supcon=4.0039 | val_loss=0.6477 | val_acc=68.5% | B2=68.0% B3=68.8% | supcon_w=0.15 | lr=3.76e-04 | 1350s elapsed
+Epoch  30/50 | train_loss=0.9594 | ce=0.3605 | supcon=3.9926 | val_loss=0.6143 | val_acc=71.4% | B2=63.1% B3=75.3% | supcon_w=0.15 | lr=3.46e-04 | 1399s elapsed
+Epoch  31/50 | train_loss=0.9483 | ce=0.3506 | supcon=3.9847 | val_loss=0.6855 | val_acc=68.5% | B2=71.9% B3=66.9% | supcon_w=0.15 | lr=3.17e-04 | 1447s elapsed
+Epoch  32/50 | train_loss=0.9527 | ce=0.3546 | supcon=3.9876 | val_loss=0.6341 | val_acc=69.5% | B2=67.2% B3=70.6% | supcon_w=0.15 | lr=2.88e-04 | 1495s elapsed
+Epoch  33/50 | train_loss=0.9410 | ce=0.3445 | supcon=3.9765 | val_loss=0.6385 | val_acc=70.2% | B2=67.0% B3=71.6% | supcon_w=0.15 | lr=2.60e-04 | 1543s elapsed
+Epoch  34/50 | train_loss=0.9359 | ce=0.3402 | supcon=3.9710 | val_loss=0.6037 | val_acc=72.8% | B2=56.5% B3=80.4% | supcon_w=0.15 | lr=2.33e-04 | 1592s elapsed
+Epoch  35/50 | train_loss=0.9265 | ce=0.3318 | supcon=3.9644 | val_loss=0.6637 | val_acc=69.3% | B2=70.9% B3=68.5% | supcon_w=0.15 | lr=2.07e-04 | 1640s elapsed
+Epoch  36/50 | train_loss=0.9260 | ce=0.3311 | supcon=3.9664 | val_loss=0.6328 | val_acc=71.4% | B2=61.9% B3=75.7% | supcon_w=0.15 | lr=1.82e-04 | 1688s elapsed
+Epoch  37/50 | train_loss=0.9213 | ce=0.3279 | supcon=3.9559 | val_loss=0.6255 | val_acc=71.7% | B2=64.9% B3=74.9% | supcon_w=0.15 | lr=1.59e-04 | 1736s elapsed
+Epoch  38/50 | train_loss=0.9150 | ce=0.3219 | supcon=3.9537 | val_loss=0.6584 | val_acc=69.1% | B2=70.1% B3=68.6% | supcon_w=0.15 | lr=1.36e-04 | 1785s elapsed
+Epoch  39/50 | train_loss=0.9173 | ce=0.3243 | supcon=3.9533 | val_loss=0.6268 | val_acc=72.0% | B2=65.4% B3=75.1% | supcon_w=0.15 | lr=1.16e-04 | 1833s elapsed
+Epoch  40/50 | train_loss=0.9158 | ce=0.3234 | supcon=3.9497 | val_loss=0.6451 | val_acc=70.3% | B2=67.8% B3=71.5% | supcon_w=0.15 | lr=9.64e-05 | 1881s elapsed
+Epoch  41/50 | train_loss=0.8960 | ce=0.3053 | supcon=3.9386 | val_loss=0.6402 | val_acc=70.5% | B2=65.8% B3=72.7% | supcon_w=0.15 | lr=7.88e-05 | 1929s elapsed
+Epoch  42/50 | train_loss=0.8977 | ce=0.3076 | supcon=3.9344 | val_loss=0.6419 | val_acc=70.4% | B2=65.0% B3=72.9% | supcon_w=0.15 | lr=6.28e-05 | 1978s elapsed
+Epoch  43/50 | train_loss=0.9000 | ce=0.3099 | supcon=3.9342 | val_loss=0.6341 | val_acc=71.6% | B2=63.4% B3=75.4% | supcon_w=0.15 | lr=4.85e-05 | 2026s elapsed
+Epoch  44/50 | train_loss=0.8915 | ce=0.3021 | supcon=3.9297 | val_loss=0.6270 | val_acc=72.0% | B2=61.8% B3=76.7% | supcon_w=0.15 | lr=3.61e-05 | 2075s elapsed
+Epoch  45/50 | train_loss=0.8922 | ce=0.3033 | supcon=3.9264 | val_loss=0.6461 | val_acc=70.2% | B2=67.0% B3=71.7% | supcon_w=0.15 | lr=2.54e-05 | 2123s elapsed
+Epoch  46/50 | train_loss=0.8925 | ce=0.3032 | supcon=3.9289 | val_loss=0.6229 | val_acc=72.2% | B2=60.0% B3=77.9% | supcon_w=0.15 | lr=1.67e-05 | 2172s elapsed
+Epoch  47/50 | train_loss=0.8856 | ce=0.2972 | supcon=3.9224 | val_loss=0.6341 | val_acc=71.6% | B2=63.4% B3=75.4% | supcon_w=0.15 | lr=9.85e-06 | 2220s elapsed
+Epoch  48/50 | train_loss=0.8884 | ce=0.2999 | supcon=3.9232 | val_loss=0.6407 | val_acc=70.6% | B2=64.5% B3=73.5% | supcon_w=0.15 | lr=4.94e-06 | 2268s elapsed
+Epoch  49/50 | train_loss=0.8932 | ce=0.3040 | supcon=3.9282 | val_loss=0.6332 | val_acc=70.7% | B2=64.7% B3=73.5% | supcon_w=0.15 | lr=1.99e-06 | 2317s elapsed
+Epoch  50/50 | train_loss=0.8927 | ce=0.3032 | supcon=3.9300 | val_loss=0.6334 | val_acc=71.1% | B2=63.2% B3=74.7% | supcon_w=0.15 | lr=1.00e-06 | 2365s elapsed
+
+Best val_acc: 73.07% at epoch 11
+SupCon DINOv2 classifier saved to stage2_hier_b23_supcon_dinov2_classifier.pth
+
+Best per-class accuracy:
+  B2: 58.7%
+  B3: 79.8%
+
+Best confusion matrix (rows=true, cols=pred):
+  B2:  359  253
+  B3:  267 1052

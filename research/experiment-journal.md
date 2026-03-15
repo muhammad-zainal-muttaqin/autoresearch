@@ -504,3 +504,70 @@ B4:    2   194  358
 **Success criterion**: binary `B2/B3` validation accuracy beats the plain CE specialist, and hierarchical end-to-end `val_map50_95` exceeds the non-contrastive hierarchical baseline.
 
 **Falsification rule**: If the contrastive specialist improves embedding separation but not the final pipeline metric, then the remaining bottleneck is no longer the `B2/B3` embedding geometry and the next branch must focus on detector-side localization or a stronger fine-grained token model.
+
+**RESULT (2026-03-15 ~16:40 UTC)**: val_acc=73.07% at epoch 11 (B2=58.7%, B3=79.8%). Final epoch 50: val_acc=71.1%, B2=63.2%, B3=74.7%. DISCARD.
+
+**Analysis**: SupCon did NOT improve binary B2/B3 accuracy over plain CE (72.81%). The best SupCon checkpoint is only 73.07% vs 72.81% CE — a negligible 0.26% improvement. The supcon loss did not help the model separate B2 from B3 better. The oscillation pattern (B2/B3 accuracy swinging every few epochs) persisted throughout all 50 epochs, suggesting the B2/B3 boundary is fundamentally unstable — this is consistent with label noise (annotators inconsistently labeling borderline bunches). FALSIFIED: contrastive loss does NOT help when the underlying problem is label noise/ambiguity.
+
+**STRATEGIC PIVOT (per researcher directive)**: ABANDON two-stage pipeline. Focus on single-stage YOLO improvements:
+1. YOLO with label smoothing (addresses B2/B3 ambiguity from the loss side)
+2. DINOv2 fine-tuning (unfreeze backbone, small model)
+3. Smaller models only (yolo11s/m), max 40 epochs / 0.5h per experiment
+
+
+## Experiment 20 — 2026-03-15 ~16:45 UTC — YOLO11s Label Smoothing
+
+**Hypothesis**: If label smoothing=0.1 is added to YOLO11s training, the model will be penalized less for near-miss B2/B3 predictions (treating labels as soft targets: P(B2)=0.9, P(B3)=0.1 for a B2 box), which should improve B2/B3 calibration and raise val_map50_95. Label smoothing is known to help with noisy/ambiguous labels.
+
+**Mechanism**: Hard labels penalize the model equally for predicting B3 on an actually-mislabeled-B2 box as for a completely wrong prediction. Soft labels reduce this gradient signal, helping the model learn more robust features rather than overfitting to noisy B2/B3 boundaries.
+
+**Change**: MODEL=yolo11s.pt (small, fast), label_smoothing=0.1, EPOCHS=40, TIME_HOURS=0.5
+
+**Expected delta**: +2-5% mAP if label noise is the bottleneck (likely)
+**Success criterion**: val_map50_95 > 0.27 OR B2 mAP50-95 > 0.23
+**Falsification**: If label smoothing doesn't help, then the model is already robust to B2/B3 ambiguity and the bottleneck is elsewhere
+
+
+## Experiment 18c — 2026-03-15 14:20 UTC — Hierarchical End-to-End Evaluation
+
+**Hypothesis**: If the hierarchical pipeline (coarse B1/B23/B4 classifier + binary B2/B3 specialist) can route easy decisions correctly and delegate B2/B3 disambiguation to the specialist, the end-to-end mAP should exceed the flat 4-way DINOv2 baseline (0.181088) and ideally exceed the YOLO baseline (0.269424).
+
+**Classifiers used**:
+- Coarse: `stage2_hier_coarse3_dinov2_classifier.pth` — val_acc=75.09% (B1=85%, B23=76.5%, B4=64.6%)
+- Binary: `stage2_hier_b23_dinov2_classifier.pth` — val_acc=72.81% (B2=57.4%, B3=80.0%) — ONLY 6/50 EPOCHS
+
+**Result**: mAP50=0.358407, val_map50_95=0.177635 — DISCARD (far below baseline 0.269424)
+
+**Per-class AP50-95**:
+- B1: 0.3710 (vs one-stage 0.440 — worse)
+- B2: 0.0972 (catastrophic — still the hard boundary)
+- B3: 0.1576 (vs one-stage 0.270 — much worse)
+- B4: 0.0847 (vs one-stage 0.152 — worse)
+
+**Analysis**:
+1. The binary specialist (only 6 epochs) was NOT converged. The 72.81% was at epoch 2. This directly caused B2 collapse at 0.097.
+2. The coarse B4 leakage (35% of B4 crops routed to B23 branch) forces those B4 boxes into the binary specialist which classifies them as B2 or B3 — explaining B4 at 0.085.
+3. Compound error: detector (~90% recall) × coarse (~75%) × binary (~60% for B2) = chain product leaves very little signal.
+4. Even if we perfect the binary specialist, the B4 leakage (35%) in the coarse classifier fundamentally caps B4 at 65%.
+5. The hierarchical strategy is fundamentally limited by the coarse classifier's inability to separate B4 from B23.
+
+**Key insight**: The hierarchical decomposition is NOT sufficient. The core bottleneck remains the same visual ambiguity, just shifted between stages. The B23 binary specialist also needs much more training.
+
+**Immediate next steps (in priority order)**:
+1. Train SupCon B23 specialist to convergence (50 epochs) — this is Experiment 19
+2. After getting SupCon specialist, re-evaluate hierarchical pipeline
+3. If still fails, abandon two-stage entirely and focus on YOLO with label smoothing or fine-tuning DINOv2 backbone (unfreeze last N layers)
+
+
+## Experiment 19 — 2026-03-15 14:25 UTC — SupCon B2/B3 Specialist Training
+
+**Hypothesis**: If the binary B2/B3 specialist is trained with CE + supervised contrastive loss (SupCon) with a projection head, the embedding space will push B2 and B3 apart more explicitly than CE alone, raising binary accuracy above the plain CE 72.81% and improving end-to-end mAP50-95 of the hierarchical pipeline.
+
+**Mechanism**: SupCon loss minimizes cosine distance between embeddings of same-class crops while maximizing it between different classes. For the near-identical B2/B3 boundary, this geometric pressure should find discriminative features that CE loss misses.
+
+**Change**: Run `scripts/train_dinov2_supcon_imagefolder_classifier.py` on `Dataset-Crops-B23` (50 epochs, 2h budget, supcon_weight=0.15, supcon_temperature=0.07, supcon_start_epoch=3).
+
+**Success criterion**: binary B2/B3 val_acc > 73% AND B2 acc > 60%. Then re-run hierarchical eval.
+
+**Falsification**: If SupCon doesn't improve binary accuracy over CE, then the B2/B3 ambiguity is not solvable via representation learning — it is inherent label noise, and no classifier will fix it.
+

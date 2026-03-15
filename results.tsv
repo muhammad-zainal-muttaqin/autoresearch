@@ -41,3 +41,4 @@ bbcc84a	0.343122	0.167510	0.000000	0.000000	0.0	discard	track=two-stage stage1+e
 63a852d	0.543667	0.257974	0.500905	0.628034	9.6	discard	yolo11l TIME=2h epochs=300 patience=50 AdamW train+test FINAL (discard)
 2796a26	0.543667	0.257974	0.500905	0.628034	9.6	discard	track=one-stage yolo11l TIME_HOURS=2.0 train+test long-run
 7cf029c	0.367319	0.181088	0.000000	0.000000	0.0	discard	track=two-stage stage1+dinov2_ce corrected-eval
+69b23a3	0.358407	0.177635	0.000000	0.000000	0.0	discard	track=two-stage stage1+hier_coarse3+hier_b23_partial(ep2/50) hierarchical-eval
