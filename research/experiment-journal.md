@@ -643,3 +643,16 @@ B4:    2   194  358
 **FINAL CONCLUSION on two-stage pipeline**: Every variant tested — flat CE, CORN, SupCon, hierarchical narrow, hierarchical wide — all peak at 71-75% binary/coarse accuracy. The B2/B3 distinction at crop-level, with any context window, is NOT reliably solvable with a frozen DINOv2 + linear head approach. The feature space is simply not separable with this method.
 
 **Next**: RF-DETR end-to-end (highest expected impact: +8-14 mAP pts per research report).
+
+
+## Experiment 23 — 2026-03-15 ~17:45 UTC — RF-DETR Small (End-to-End DINOv2 Detection)
+
+**Hypothesis**: RF-DETR with DINOv2 backbone performs end-to-end detection + classification without cascade error. Unlike the failed two-stage pipeline, the transformer decoder directly attends to discriminative B2/B3 features in a single forward pass. The DINOv2 backbone, pretrained on 142M images, has richer color/texture representations than YOLO's CNN backbone. Training on Dataset-TrainTest (3388 images vs 2764) gives more data. Previous RF-DETR Base run got 0.2489 — trying RFDETRSmall with different configuration (more data, higher epochs).
+
+**Key difference from previous RF-DETR attempt**:
+- Previous: RFDETRBase, Dataset-YOLO (2764 imgs), 30 epochs, best=0.2489
+- This: RFDETRSmall (or Base with more data), Dataset-RFDETR-TrainTest (3388 imgs), 40 epochs
+
+**Success criterion**: val_map50_95 > 0.280 within 40 epochs
+**Kill criterion**: If mAP50-95 < 0.200 after 20 epochs → kill, try HAT-YOLO or CORN loss
+
