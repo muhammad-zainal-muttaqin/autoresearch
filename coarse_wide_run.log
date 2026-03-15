@@ -1,0 +1,19 @@
+Device: cuda
+Dataset root: Dataset-Crops-Wide-Coarse3
+
+Dataset sizes: train=12360, val=2786
+Classes: ['B1', 'B23', 'B4']
+
+Building DINOv2 classifier...
+  Total params: 87.0M | Trainable: 0.4M
+
+Computing class weights...
+  Class counts: {'B1': 1540, 'B23': 8477, 'B4': 2343}
+  Class weights: ['2.675', '0.486', '1.758']
+
+Training for up to 40 epochs (0.7h budget)...
+Epoch   1/40 | train_loss=0.6791 | train_acc=60.6% | val_loss=0.8735 | val_acc=56.3% | B1=97.0% B23=42.6% B4=82.1% | lr=9.98e-04 | 0s elapsed
+  *** Saved best model (val_acc=56.32%) ***
+Epoch   2/40 | train_loss=0.5906 | train_acc=65.4% | val_loss=0.6277 | val_acc=71.1% | B1=86.7% B23=71.7% B4=60.8% | lr=9.94e-04 | 67s elapsed
+  *** Saved best model (val_acc=71.14%) ***
+Epoch   3/40 | train_loss=0.5567 | train_acc=67.8% | val_loss=0.7106 | val_acc=64.9% | B1=80.1% B23=55.9% B4=87.7% | lr=9.86e-04 | 137s elapsed
