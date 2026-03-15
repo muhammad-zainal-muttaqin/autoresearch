@@ -1,15 +1,19 @@
 """
-Autoresearch training script. Single-GPU, single-file.
-The autoresearch agent edits THIS file — specifically the constants at the top.
-Usage: uv run train.py
+Autoresearch training script.
+
+Normal mode:
+- edit only the constants at the top of this file
+- keep prepare.py fixed
+- run `uv run train.py`
 """
 
 import os
-import time
 import shutil
-from pathlib import Path
+import time
+
 import torch
 from ultralytics import YOLO
+
 from prepare import (
     BEST_WEIGHTS,
     DEFAULT_TIME_HOURS,
@@ -20,20 +24,19 @@ from prepare import (
     verify_dataset,
 )
 
-# ── Dataset ───────────────────────────────────────────────────────────────────
-# Use Dataset-TrainTest (train+test as training set, val unchanged) — this gave
-# the best results historically. Evaluation always uses Dataset-YOLO val split.
+# Default probe baseline:
+# - small model
+# - short budget
+# - fixed evaluator
+# Historical best remains in results.tsv. This file is the cheap probing surface.
 DATA_YAML = REPO_ROOT / "Dataset-TrainTest" / "data.yaml"
 
-# ── Model ────────────────────────────────────────────────────────────────────
 MODEL = "yolo11s.pt"
 
-# ── Time budget ──────────────────────────────────────────────────────────────
-TIME_HOURS = 0.5  # 30 min — fast signal testing
-
-# ── Training hyperparameters ─────────────────────────────────────────────────
+TIME_HOURS = DEFAULT_TIME_HOURS
 EPOCHS = 40
 PATIENCE = 15
+
 OPTIMIZER = "AdamW"
 LR0 = 0.001
 LRF = 0.01
@@ -42,11 +45,9 @@ WEIGHT_DECAY = 0.0005
 WARMUP_EPOCHS = 3.0
 COS_LR = True
 
-# ── Batch & image ────────────────────────────────────────────────────────────
 BATCH = 16
 IMGSZ = 640
 
-# ── Augmentation ─────────────────────────────────────────────────────────────
 MOSAIC = 1.0
 MIXUP = 0.0
 COPY_PASTE = 0.0
@@ -63,26 +64,26 @@ FLIPLR = 0.5
 ERASING = 0.4
 CLOSE_MOSAIC = 10
 
-# ── Loss weights ─────────────────────────────────────────────────────────────
 BOX = 7.5
 CLS = 0.5
 DFL = 1.5
-LABEL_SMOOTHING = 0.1  # Soft labels to reduce B2/B3 confusion penalty
+LABEL_SMOOTHING = 0.0
 
-# ── Misc ─────────────────────────────────────────────────────────────────────
-FREEZE = None  # e.g. 10 to freeze first 10 layers
+FREEZE = None
 AMP = True
 SEED = 0
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Training — do not change anything below this line
-# ══════════════════════════════════════════════════════════════════════════════
+# Do not change anything below this line during normal experimentation.
+
 
 def main():
     print("Verifying dataset...")
     verify_dataset()
     if not torch.cuda.is_available():
-        raise RuntimeError("CUDA GPU required for this repository. Install a CUDA-enabled PyTorch build and run on a GPU host.")
+        raise RuntimeError(
+            "CUDA GPU required for this repository. "
+            "Install a CUDA-enabled PyTorch build and run on a GPU host."
+        )
 
     # Clear the fixed output directory so a failed run cannot reuse stale weights.
     shutil.rmtree(TRAIN_RUN_DIR, ignore_errors=True)
@@ -143,16 +144,13 @@ def main():
         model.train(**train_args)
         elapsed = time.time() - t0
 
-        # ── Evaluate best model ──────────────────────────────────────────
         print("\nEvaluating best.pt...")
         metrics = evaluate_model(BEST_WEIGHTS)
     finally:
         os.chdir(repo_cwd)
 
-    # ── VRAM usage ───────────────────────────────────────────────────────
     peak_vram = torch.cuda.max_memory_allocated() / 1024 / 1024
 
-    # ── Print machine-parseable summary ──────────────────────────────────
     print("\n---")
     print(f"val_map50:        {metrics['map50']:.6f}")
     print(f"val_map50_95:     {metrics['map50_95']:.6f}")
