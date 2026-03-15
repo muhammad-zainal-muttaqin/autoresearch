@@ -37,3 +37,4 @@ d9a3ded	0.554394	0.268658	0.517426	0.624531	9.8	discard	yolo11l copy_paste 0.3 e
 d9a3ded	0.551415	0.261906	0.515891	0.619879	9.8	discard	yolo11l LR0=0.002 epochs 80 train+test (higher LR hurts)
 d9a3ded	0.268789	0.268789	0.510604	0.625442	9.8	discard	yolo11l epochs 100 train+test (no improvement vs 80)
 d9a3ded	0.552839	0.264376	0.513143	0.627492	9.8	discard	yolo11l SGD epochs 80 train+test (AdamW better)
+d945b18					0.0	discard	yolo11l TIME=2h epochs=300 patience=50 AdamW train+test (FINAL)
