@@ -1,0 +1,31 @@
+=== Color-Based Ripeness Classifier Analysis ===
+
+Step 1: Analyze HSV features per class...
+Mean HSV features per class (training set):
+  B1: mean_H=26.6° | green=1.6% | yellow=31.3% | orange=52.1% | red=13.7% | sat=49.0%
+  B2: mean_H=46.5° | green=7.0% | yellow=29.0% | orange=35.3% | red=5.2% | sat=31.6%
+  B3: mean_H=74.5° | green=6.6% | yellow=16.6% | orange=21.1% | red=0.7% | sat=30.7%
+  B4: mean_H=55.3° | green=4.1% | yellow=26.7% | orange=26.4% | red=4.8% | sat=29.7%
+
+Step 2: Evaluate rule-based color classifier...
+
+val set results:
+  Overall accuracy: 31.6%
+  Per-class accuracy:
+    B1: 1.0% (3/301)
+    B2: 41.2% (252/612)
+    B3: 43.3% (571/1319)
+    B4: 9.6% (53/554)
+
+  Confusion matrix (rows=GT, cols=pred):
+               B1       B2       B3       B4      
+  B1                  3      131      121       46
+  B2                 15      252      292       53
+  B3                 98      559      571       91
+  B4                 52      263      186       53
+
+Step 3: Compare with learned EfficientNet classifier (62.74% val acc)
+  Color classifier val acc: 31.6%
+  EfficientNet classifier val acc: 62.7%
+  EfficientNet is better overall.
+  Key question: does color help B2/B3 specifically?
