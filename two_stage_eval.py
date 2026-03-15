@@ -2,14 +2,14 @@
 Two-stage pipeline evaluation.
 
 Stage 1: Single-class TBS detector (stage1_detector.pt)
-Stage 2: EfficientNet-B0 crop classifier (stage2_classifier.pth)
+Stage 2: EfficientNet-B0 or DINOv2 crop classifier
 
 Pipeline:
 1. Run detector on val image → get boxes (class=TBS, conf score)
 2. Crop each detected region
 3. Run classifier on crop → get B1/B2/B3/B4 probability
 4. Assign predicted class to detection
-5. Compute mAP50-95 against GT labels
+5. Compute mAP50-95 against GT labels (COCO protocol, 10 IoU thresholds)
 
 The combined mAP is limited by:
 - Detector recall (missing detections)
@@ -27,6 +27,7 @@ from prepare import DATA_YAML, CLASS_NAMES
 
 # Model paths
 DETECTOR_PATH = Path("/workspace/autoresearch/stage1_detector.pt")
+# Set to stage2_dinov2_classifier.pth to use DINOv2 backbone instead
 CLASSIFIER_PATH = Path("/workspace/autoresearch/stage2_classifier.pth")
 DATA_YAML_PATH = DATA_YAML
 
@@ -41,15 +42,47 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def load_classifier(model_path):
-    """Load the EfficientNet-B0 classifier."""
-    model = models.efficientnet_b0(weights=None)
-    in_features = model.classifier[1].in_features
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.3, inplace=True),
-        nn.Linear(in_features, 4),
-    )
+    """Load classifier — auto-detects EfficientNet-B0 or DINOv2 from checkpoint."""
     ckpt = torch.load(str(model_path), map_location=DEVICE, weights_only=False)
-    model.load_state_dict(ckpt['model_state_dict'])
+
+    if 'dinov2_model' in ckpt:
+        # DINOv2-based classifier
+        print(f"  Loading DINOv2 classifier (backbone: {ckpt['dinov2_model']})")
+        from transformers import AutoModel
+        backbone = AutoModel.from_pretrained(ckpt['dinov2_model'])
+        hidden_size = backbone.config.hidden_size
+        head = nn.Sequential(
+            nn.Linear(hidden_size, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, 4),
+        )
+
+        class DINOv2Clf(nn.Module):
+            def __init__(self, backbone, head):
+                super().__init__()
+                self.backbone = backbone
+                self.head = head
+
+            def forward(self, x):
+                out = self.backbone(pixel_values=x)
+                cls_emb = out.last_hidden_state[:, 0, :]
+                return self.head(cls_emb)
+
+        model = DINOv2Clf(backbone, head)
+        model.load_state_dict(ckpt['model_state_dict'])
+    else:
+        # EfficientNet-B0 classifier (legacy)
+        print("  Loading EfficientNet-B0 classifier")
+        model = models.efficientnet_b0(weights=None)
+        in_features = model.classifier[1].in_features
+        model.classifier = nn.Sequential(
+            nn.Dropout(p=0.3, inplace=True),
+            nn.Linear(in_features, 4),
+        )
+        model.load_state_dict(ckpt['model_state_dict'])
+
     model = model.to(DEVICE)
     model.eval()
     return model
@@ -102,6 +135,9 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir, iou_thresh
     Evaluate two-stage pipeline on val set.
 
     Returns: mAP50, mAP50-95, per-class AP50
+
+    mAP50-95 is computed correctly by evaluating at each IoU threshold in
+    [0.50, 0.55, 0.60, ..., 0.95] and averaging — same as COCO protocol.
     """
     clf_tf = transforms.Compose([
         transforms.Resize(256),
@@ -111,14 +147,18 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir, iou_thresh
     ])
 
     n_classes = 4
-    # all_predictions[cls] = list of (conf, is_tp) for that class
-    all_predictions = {c: [] for c in range(n_classes)}
-    all_gt_counts = {c: 0 for c in range(n_classes)}
 
     img_paths = sorted([p for p in val_img_dir.glob('*')
                         if p.suffix.lower() in ('.jpg', '.jpeg', '.png')])
 
     print(f"  Running pipeline on {len(img_paths)} val images...")
+
+    # Collect all detections across the full val set first (one pass)
+    # all_detections: list of (img_idx, pred_cls, comb_conf, det_box_xyxy)
+    all_detections = []
+    # all_gt: list of (img_idx, gt_cls, gt_box_xyxy)
+    all_gt = []
+    all_gt_counts = {c: 0 for c in range(n_classes)}
 
     for i, img_path in enumerate(img_paths):
         if (i + 1) % 100 == 0:
@@ -126,9 +166,18 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir, iou_thresh
 
         gt_boxes = read_gt_labels(val_lbl_dir, img_path.stem)
 
-        # Count GT per class
+        img = Image.open(str(img_path)).convert('RGB')
+        img_w, img_h = img.size
+
+        # Count GT and store in absolute coords
         for gt_box in gt_boxes:
-            all_gt_counts[gt_box[0]] += 1
+            cls, cx, cy, bw, bh = gt_box
+            all_gt_counts[cls] += 1
+            x1_gt = (cx - bw / 2) * img_w
+            y1_gt = (cy - bh / 2) * img_h
+            x2_gt = (cx + bw / 2) * img_w
+            y2_gt = (cy + bh / 2) * img_h
+            all_gt.append((i, cls, [x1_gt, y1_gt, x2_gt, y2_gt]))
 
         # Stage 1: Detect
         results = detector.predict(str(img_path), imgsz=IMGSZ, conf=DETECTOR_CONF,
@@ -137,8 +186,6 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir, iou_thresh
             continue
 
         result = results[0]
-        img = Image.open(str(img_path)).convert('RGB')
-        img_w, img_h = img.size
 
         # Stage 2: Classify each detection
         crops = []
@@ -181,67 +228,75 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir, iou_thresh
             pred_conf_cls = probs.max(dim=1).values.cpu().numpy()
 
         # Combined score: detector conf × classifier conf
-        combined_confs = [dc * pc for dc, pc in zip(det_confs, pred_conf_cls)]
+        for pred_cls, dc, pc, det_box in zip(pred_classes, det_confs, pred_conf_cls, det_boxes_xyxy):
+            combined_conf = float(dc) * float(pc)
+            all_detections.append((i, int(pred_cls), combined_conf, det_box))
 
-        # Convert GT to xyxy for IoU computation
-        gt_boxes_xyxy = []
-        for gt_box in gt_boxes:
-            cls, cx, cy, bw, bh = gt_box
-            x1_gt = (cx - bw/2) * img_w
-            y1_gt = (cy - bh/2) * img_h
-            x2_gt = (cx + bw/2) * img_w
-            y2_gt = (cy + bh/2) * img_h
-            gt_boxes_xyxy.append((cls, [x1_gt, y1_gt, x2_gt, y2_gt]))
+    # ── Compute mAP at each IoU threshold (COCO protocol) ────────────────────
+    # Sort all detections by confidence (descending) once — reuse across thresholds
+    all_detections_sorted = sorted(all_detections, key=lambda x: x[2], reverse=True)
 
-        # For each IoU threshold, match predictions to GT
-        # For simplicity, use IoU=0.5 only for AP computation
-        # Track matched GT boxes
-        iou50_matched_gt = set()
+    def compute_map_at_iou(iou_thresh):
+        """Compute mean AP across 4 classes at a single IoU threshold."""
+        # per-class lists of (conf, is_tp) — built via a single pass over sorted dets
+        per_class_preds = {c: [] for c in range(n_classes)}
+        matched_gt = set()  # (img_idx, gt_idx) pairs already matched
 
-        for j, (pred_cls, comb_conf, det_box) in enumerate(zip(pred_classes, combined_confs, det_boxes_xyxy)):
-            # Find best matching GT box of same predicted class
-            best_iou = 0
-            best_gt_idx = -1
-            for k, (gt_cls, gt_box) in enumerate(gt_boxes_xyxy):
-                if gt_cls != pred_cls:
+        for img_idx, pred_cls, conf, det_box in all_detections_sorted:
+            # Find best matching GT box of same class in same image
+            best_iou = 0.0
+            best_key = None
+            for gt_idx, (g_img_idx, g_cls, g_box) in enumerate(all_gt):
+                if g_img_idx != img_idx or g_cls != pred_cls:
                     continue
-                iou_val = iou_single(det_box, gt_box)
+                key = (img_idx, gt_idx)
+                if key in matched_gt:
+                    continue
+                iou_val = iou_single(det_box, g_box)
                 if iou_val > best_iou:
                     best_iou = iou_val
-                    best_gt_idx = k
+                    best_key = key
 
-            is_tp = (best_iou >= 0.5 and best_gt_idx not in iou50_matched_gt)
+            is_tp = best_iou >= iou_thresh and best_key is not None
             if is_tp:
-                iou50_matched_gt.add(best_gt_idx)
+                matched_gt.add(best_key)
+            per_class_preds[pred_cls].append((conf, is_tp))
 
-            all_predictions[pred_cls].append((comb_conf, is_tp))
+        ap_per_class = {}
+        for cls in range(n_classes):
+            preds = per_class_preds[cls]
+            n_gt = all_gt_counts[cls]
+            if n_gt == 0 or not preds:
+                ap_per_class[cls] = 0.0
+                continue
+            tp_cumsum = 0
+            fp_cumsum = 0
+            recalls = []
+            precisions = []
+            for _, is_tp in preds:  # already sorted globally
+                if is_tp:
+                    tp_cumsum += 1
+                else:
+                    fp_cumsum += 1
+                recalls.append(tp_cumsum / n_gt)
+                precisions.append(tp_cumsum / (tp_cumsum + fp_cumsum))
+            ap_per_class[cls] = compute_ap(recalls, precisions)
+        return np.mean(list(ap_per_class.values())), ap_per_class
 
-    # Compute AP per class at IoU=0.5
-    per_class_ap50 = {}
-    for cls in range(n_classes):
-        preds = sorted(all_predictions[cls], key=lambda x: x[0], reverse=True)
-        n_gt = all_gt_counts[cls]
+    # AP50
+    map50, per_class_ap50 = compute_map_at_iou(0.5)
 
-        if n_gt == 0 or not preds:
-            per_class_ap50[cls] = 0.0
-            continue
-
-        tp_cumsum = 0
-        fp_cumsum = 0
-        recalls = []
-        precisions = []
-
-        for conf, is_tp in preds:
-            if is_tp:
-                tp_cumsum += 1
-            else:
-                fp_cumsum += 1
-            recalls.append(tp_cumsum / n_gt)
-            precisions.append(tp_cumsum / (tp_cumsum + fp_cumsum))
-
-        per_class_ap50[cls] = compute_ap(recalls, precisions)
-
-    map50 = np.mean(list(per_class_ap50.values()))
+    # mAP50-95: average over IoU thresholds 0.50..0.95 step 0.05
+    iou_thresholds_coco = np.arange(0.5, 1.0, 0.05)
+    map_values = []
+    per_class_ap_accum = {c: [] for c in range(n_classes)}
+    for iou_t in iou_thresholds_coco:
+        m, ap_c = compute_map_at_iou(round(float(iou_t), 2))
+        map_values.append(m)
+        for c in range(n_classes):
+            per_class_ap_accum[c].append(ap_c[c])
+    map50_95 = float(np.mean(map_values))
+    per_class_ap50_95 = {c: float(np.mean(per_class_ap_accum[c])) for c in range(n_classes)}
 
     print(f"\nTwo-stage pipeline results:")
     print(f"  GT counts: B1={all_gt_counts[0]}, B2={all_gt_counts[1]}, B3={all_gt_counts[2]}, B4={all_gt_counts[3]}")
@@ -249,13 +304,12 @@ def evaluate_pipeline(detector, classifier, val_img_dir, val_lbl_dir, iou_thresh
     for cls, name in enumerate(CLASS_NAMES):
         print(f"    {name}: {per_class_ap50[cls]:.4f}")
     print(f"  mAP50: {map50:.6f}")
+    print(f"  AP50-95 per class:")
+    for cls, name in enumerate(CLASS_NAMES):
+        print(f"    {name}: {per_class_ap50_95[cls]:.4f}")
+    print(f"  mAP50-95 (COCO, 10 thresholds): {map50_95:.6f}")
 
-    # Note: mAP50-95 would need to be computed at 10 IoU thresholds
-    # Approximate as mAP50 * 0.5 (rough rule of thumb)
-    map50_95_approx = map50 * 0.47  # Based on observed ratio in this project
-    print(f"  mAP50-95 (approx): {map50_95_approx:.6f}")
-
-    return map50, map50_95_approx, per_class_ap50
+    return map50, map50_95, per_class_ap50
 
 
 if __name__ == '__main__':
@@ -272,14 +326,14 @@ if __name__ == '__main__':
     iou_thresholds = np.arange(0.5, 1.0, 0.05)
 
     print("\nRunning two-stage evaluation...")
-    map50, map50_95_approx, per_class_ap50 = evaluate_pipeline(
+    map50, map50_95, per_class_ap50 = evaluate_pipeline(
         detector, classifier, val_img_dir, val_lbl_dir, iou_thresholds
     )
 
     print(f"\n{'='*50}")
     print(f"FINAL RESULTS:")
-    print(f"  val_map50:    {map50:.6f}")
-    print(f"  val_map50_95 (approx): {map50_95_approx:.6f}")
-    print(f"  Current best baseline: 0.260003")
-    print(f"  Delta: {map50_95_approx - 0.260003:+.6f}")
+    print(f"  val_map50:        {map50:.6f}")
+    print(f"  val_map50_95:     {map50_95:.6f}")
+    print(f"  Current best baseline: 0.269424")
+    print(f"  Delta: {map50_95 - 0.269424:+.6f}")
     print(f"{'='*50}")

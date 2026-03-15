@@ -300,6 +300,42 @@
 
 **Alternatively**: Try `copy_paste=0.5` (copy-paste augmentation, which inserts object crops from other images). This can increase B4 instance frequency by copying small B4 objects into other scenes, creating synthetic training examples of B4 at various scales.
 
+---
+
+## STRATEGIC REFRAME — 2026-03-15 (Human Input)
+
+**Critical insight from human researcher**:
+
+- Single-class detector achieves 0.390 mAP50-95. The detection itself is near-target.
+- Multi-class YOLO at 0.269 is being dragged down by B2/B3 confusion.
+- TIME_HOURS=0.33 (20 min) → only ~21 epochs for yolo11l. Far from convergence.
+- Extending to TIME_HOURS=2.0 → 100+ epochs → much better convergence.
+
+**Two priority paths**:
+
+### JALUR A: More training time (immediate, high impact)
+
+**A1 (NEXT EXPERIMENT)**: TIME_HOURS=2.0, yolo11l, EPOCHS=300, PATIENCE=50, AdamW, Dataset-TrainTest.
+- Hypothesis: At 100+ epochs, yolo11l on 3388 images will converge much better than at 21 epochs.
+- Expected delta: +0.02 to +0.05 mAP50-95 based on learning curve not saturated.
+- Success criterion: val_map50_95 > 0.29
+
+**A2**: If A1 fails, try TIME_HOURS=2.0 + imgsz=1024 + batch=8 (60+ epochs vs previous 9 epochs).
+
+### JALUR B: Two-stage pipeline with DINOv2 classifier
+
+**Bug fix**: two_stage_eval.py was approximating mAP50-95 = mAP50 × 0.47. Now fixed to compute real COCO mAP50-95 (10 IoU thresholds, 0.50-0.95).
+
+**B2 (PARALLEL)**: Train DINOv2-base frozen backbone + MLP head on Dataset-Crops.
+- train_dinov2_classifier.py created for this purpose.
+- EfficientNet-B0 got 62.7% val acc with B2=46.6%. DINOv2 expected >80%.
+- If DINOv2 classifier reaches >80%, re-run two_stage_eval.py with new classifier.
+
+**Code changes made**:
+1. train.py: TIME_HOURS=0.33→2.0, EPOCHS=80→300, PATIENCE=15→50, OPTIMIZER=SGD→AdamW, DATA_YAML→Dataset-TrainTest
+2. two_stage_eval.py: Fixed mAP50-95 computation (now real COCO protocol, 10 IoU thresholds). Fixed load_classifier to auto-detect EfficientNet vs DINOv2. Baseline updated to 0.269424.
+3. train_dinov2_classifier.py: New script for DINOv2-base frozen backbone + MLP head classifier.
+
 
 
 

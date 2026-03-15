@@ -225,9 +225,20 @@ Go back to Step 1. No pause. No confirmation.
 
 **KEY INSIGHT FROM EXPERIMENTS 1-5**: The ceiling is a DATA QUALITY problem, not a hyperparameter or model architecture problem. The best single-change improvement was imgsz=1024 (+0.002). All other approaches tried so far have failed or hurt performance.
 
+**KEY INSIGHT FROM EXPERIMENTS 11-13**: yolo11l at imgsz=640 batch=16 is the best single-epoch-efficiency config. With TIME_HOURS=0.33, only 21 epochs are completed — far from convergence. The learning curve is NOT saturated. TIME_HOURS=2.0+ could unlock 100+ epochs and break the 0.27 ceiling.
+
+**TWO-STAGE PIPELINE BUG (fixed 2026-03-15)**: The previous two_stage_eval.py reported mAP50-95 as mAP50 × 0.47 (a hardcoded approximation). This is NOT COCO mAP50-95. The "0.169" two-stage result was not a real mAP50-95. Fixed to compute proper COCO mAP50-95 using 10 IoU thresholds (0.50-0.95).
+
 ### Current best config
-- YOLOv9c, imgsz=1024, batch=8, AdamW, cos_lr=True, erasing=0.4
-- val_map50_95 = 0.25988 (commit ea99dc1)
+- yolo11l, imgsz=640, batch=16, AdamW, cos_lr=True, erasing=0.4, EPOCHS=80, Dataset-TrainTest
+- val_map50_95 = 0.269424 (commit d9a3ded)
+- B1=0.440, B2=0.216 (still the main bottleneck), B3=0.270, B4=0.152
+
+### KEY FINDING (2026-03-15): TIME BUDGET was the bottleneck
+- TIME_HOURS=0.33 → only ~21 epochs for yolo11l on 3388-image train set
+- EPOCHS=80 was set but time limit hit first — model never converged
+- Need TIME_HOURS=2.0+ to get 100+ epochs and proper convergence
+- AdamW consistently better than SGD for this task
 
 ---
 
