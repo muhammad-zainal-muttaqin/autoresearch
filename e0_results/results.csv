@@ -1,1 +1,2 @@
 run_id,phase,model,imgsz,seed,batch,lr0,aug,data_fraction,epochs_completed,map50,map50_95,map75,precision,recall,map50_B1,map50_B2,map50_B3,map50_B4,map50_95_B1,map50_95_B2,map50_95_B3,map50_95_B4,b2_b3_confusion,b3_b4_confusion,b4_precision,b4_recall,time_minutes,vram_gb,status
+p1b_yolov8n_s0,1B,yolov8n.pt,640,0,16,0.001,medium,1.0,,,,,,,,,,,,,,,,,,,,,fail
