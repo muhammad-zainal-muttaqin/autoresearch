@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E0 Baseline Protocol — Flowchart</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0f14;
+    --surface: #151921;
+    --surface-2: #1c2230;
+    --border: #2a3142;
+    --text: #e2e6ef;
+    --text-dim: #7a8399;
+    --text-muted: #4e5872;
+    --phase0: #f59e0b;
+    --phase0-bg: rgba(245, 158, 11, 0.08);
+    --phase0-border: rgba(245, 158, 11, 0.25);
+    --phase1: #3b82f6;
+    --phase1-bg: rgba(59, 130, 246, 0.08);
+    --phase1-border: rgba(59, 130, 246, 0.25);
+    --phase2: #a855f7;
+    --phase2-bg: rgba(168, 85, 247, 0.08);
+    --phase2-border: rgba(168, 85, 247, 0.25);
+    --phase3: #10b981;
+    --phase3-bg: rgba(16, 185, 129, 0.08);
+    --phase3-border: rgba(16, 185, 129, 0.25);
+    --gate-red: #ef4444;
+    --gate-green: #22c55e;
+    --decision: #f97316;
+    --decision-bg: rgba(249, 115, 22, 0.08);
+    --decision-border: rgba(249, 115, 22, 0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--text-muted), transparent);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .header .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  /* Flow container */
+  .flow {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Vertical connector line */
+  .connector {
+    width: 2px;
+    height: 32px;
+    background: var(--border);
+    margin: 0 auto;
+    position: relative;
+  }
+  .connector.dashed {
+    background: none;
+    border-left: 2px dashed var(--border);
+    margin-left: calc(50% - 1px);
+  }
+
+  /* Arrow connector */
+  .arrow-down {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--border);
+    margin: 0 auto;
+  }
+
+  /* Phase blocks */
+  .phase-block {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+    animation: fadeSlideIn 0.5s ease both;
+  }
+  .phase-block:nth-child(1) { animation-delay: 0.1s; }
+  .phase-block:nth-child(5) { animation-delay: 0.2s; }
+  .phase-block:nth-child(9) { animation-delay: 0.3s; }
+  .phase-block:nth-child(13) { animation-delay: 0.4s; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .phase-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .phase-duration {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .phase-body {
+    padding: 20px;
+  }
+
+  /* Task rows */
+  .tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .task-row {
+    display: flex;
+    gap: 12px;
+  }
+  .task {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    position: relative;
+  }
+  .task-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+  .task-name {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .task-detail {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Step sequence (for Phase 2) */
+  .step-sequence {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+  }
+  .step-item {
+    flex: 1;
+    padding: 14px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    position: relative;
+    text-align: center;
+  }
+  .step-item:first-child { border-radius: 8px 0 0 8px; }
+  .step-item:last-child { border-radius: 0 8px 8px 0; }
+  .step-item:not(:last-child) { border-right: none; }
+  .step-item:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translate(50%, -50%);
+    color: var(--text-muted);
+    font-size: 14px;
+    z-index: 1;
+    background: var(--surface-2);
+    padding: 2px;
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    opacity: 0.6;
+  }
+  .step-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .step-values {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Gate / Decision diamond */
+  .gate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border: 1px dashed;
+    border-radius: 10px;
+    background: var(--surface);
+    position: relative;
+  }
+  .gate-diamond {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    transform: rotate(45deg);
+    border: 2px solid;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gate-diamond span {
+    transform: rotate(-45deg);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .gate-text {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .gate-text strong {
+    font-weight: 600;
+  }
+  .gate-outcomes {
+    display: flex;
+    gap: 16px;
+    margin-left: auto;
+  }
+  .gate-outcome {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 500;
+  }
+  .gate-pass {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--gate-green);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+  }
+  .gate-fail {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--gate-red);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  /* Deliverable tags */
+  .deliverables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .deliverables-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+  .tag {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+
+  /* Phase-specific colors */
+  .p0 .phase-header { border-bottom-color: var(--phase0-border); }
+  .p0 .phase-badge { background: var(--phase0-bg); color: var(--phase0); border: 1px solid var(--phase0-border); }
+  .p0 .task-label { color: var(--phase0); }
+  .p0 { border-color: var(--phase0-border); }
+
+  .p1 .phase-header { border-bottom-color: var(--phase1-border); }
+  .p1 .phase-badge { background: var(--phase1-bg); color: var(--phase1); border: 1px solid var(--phase1-border); }
+  .p1 .task-label { color: var(--phase1); }
+  .p1 { border-color: var(--phase1-border); }
+
+  .p2 .phase-header { border-bottom-color: var(--phase2-border); }
+  .p2 .phase-badge { background: var(--phase2-bg); color: var(--phase2); border: 1px solid var(--phase2-border); }
+  .p2 .step-num { color: var(--phase2); }
+  .p2 { border-color: var(--phase2-border); }
+
+  .p3 .phase-header { border-bottom-color: var(--phase3-border); }
+  .p3 .phase-badge { background: var(--phase3-bg); color: var(--phase3); border: 1px solid var(--phase3-border); }
+  .p3 .task-label { color: var(--phase3); }
+  .p3 { border-color: var(--phase3-border); }
+
+  .gate-p0 { border-color: var(--phase0-border); background: var(--phase0-bg); }
+  .gate-p0 .gate-diamond { border-color: var(--phase0); }
+  .gate-p0 .gate-diamond span { color: var(--phase0); }
+
+  .gate-p1 { border-color: var(--phase1-border); background: var(--phase1-bg); }
+  .gate-p1 .gate-diamond { border-color: var(--phase1); }
+  .gate-p1 .gate-diamond span { color: var(--phase1); }
+
+  .gate-p2 { border-color: var(--phase2-border); background: var(--phase2-bg); }
+  .gate-p2 .gate-diamond { border-color: var(--phase2); }
+  .gate-p2 .gate-diamond span { color: var(--phase2); }
+
+  /* Decision framework at the end */
+  .decision-block {
+    border: 1px solid var(--decision-border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .decision-block .phase-header {
+    border-bottom-color: var(--decision-border);
+  }
+  .decision-block .phase-badge {
+    background: var(--decision-bg);
+    color: var(--decision);
+    border: 1px solid var(--decision-border);
+  }
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 20px;
+  }
+  .scenario {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .scenario-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .scenario-criteria {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .scenario-action {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .s-excellent .scenario-label { color: #22c55e; }
+  .s-good .scenario-label { color: #3b82f6; }
+  .s-acceptable .scenario-label { color: #f59e0b; }
+  .s-needs .scenario-label { color: #f97316; }
+  .s-insufficient { grid-column: 1 / -1; }
+  .s-insufficient .scenario-label { color: #ef4444; }
+
+  /* Phase-end note */
+  .phase-end-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .phase-end-note .icon {
+    font-size: 13px;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  /* Seed note */
+  .seed-note {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    margin: 0 auto;
+    width: fit-content;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>E0 Baseline Experimental Protocol</h1>
+    <div class="subtitle">RGB-Only Detection · 4-Class Maturity (M1–M4) · Oil Palm BBC · ~4 weeks · End-of-phase meetings at every gate</div>
+  </div>
+
+  <div class="flow">
+
+    <!-- ═══════ PHASE 0 ═══════ -->
+    <div class="phase-block p0">
+      <div class="phase-header">
+        <span class="phase-badge">PHASE 0</span>
+        <span class="phase-title">Validation & Calibration</span>
+        <span class="phase-duration">~3 days</span>
+      </div>
+      <div class="phase-body">
+        <div class="tasks">
+          <div class="task-row">
+            <div class="task">
+              <div class="task-label">Task A</div>
+              <div class="task-name">Exploratory Data Analysis</div>
+              <div class="task-detail">Class distribution, object sizes, M4 min dimensions, label quality spot-check (top 20 images)</div>
+            </div>
+          </div>
+          <div class="task-row">
+            <div class="task">
+              <div class="task-label">Task B</div>
+              <div class="task-name">Resolution Sweep</div>
+              <div class="task-detail">YOLOv8s @ 640 vs 1024px · 2 seeds<br>Lock resolution: >5% MAP gain → 1024px</div>
+            </div>
+            <div class="task">
+              <div class="task-label">Task C</div>
+              <div class="task-name">Data Learning Curve</div>
+              <div class="task-detail">YOLOv8s @ 25/50/75/100% training data · stratified by class · 2 seeds<br>Plot <strong>per-class AP</strong> (M1/M2/M3/M4 separately). M4 still climbing? → targeted data collection</div>
+            </div>
+          </div>
+        </div>
+        <div class="phase-end-note">
+          <span class="icon">⊳</span>
+          <span><strong>End-of-phase:</strong> Lock split (tree-grouped, class-stratified). Lock resolution. Assess data sufficiency per class. Spot-check label quality. If >10% label errors → STOP.</span>
+        </div>
+        <div class="deliverables">
+          <div class="deliverables-label">Locks</div>
+          <span class="tag">Tree-grouped stratified split (70/15/15)</span>
+          <span class="tag">Resolution (640 or 1024)</span>
+          <span class="tag">Data sufficiency assessment</span>
+          <span class="tag">Class weighting strategy</span>
+          <span class="tag">Label quality check</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+
+    <!-- Gate: Label quality -->
+    <div class="gate gate-p0">
+      <div class="gate-diamond"><span>?</span></div>
+      <div class="gate-text"><strong>>10% label errors?</strong> → STOP, re-label dataset before proceeding</div>
+      <div class="gate-outcomes">
+        <span class="gate-outcome gate-pass">Clean → Continue</span>
+        <span class="gate-outcome gate-fail">Bad → STOP</span>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+    <div class="arrow-down"></div>
+
+    <!-- ═══════ PHASE 1A ═══════ -->
+    <div class="phase-block p1">
+      <div class="phase-header">
+        <span class="phase-badge">PHASE 1A</span>
+        <span class="phase-title">Pipeline Decision</span>
+        <span class="phase-duration">~2-3 days</span>
+      </div>
+      <div class="phase-body">
+        <div class="tasks">
+          <div class="task-row">
+            <div class="task">
+              <div class="task-label">One-Stage vs Two-Stage</div>
+              <div class="task-name">2-3 representative architectures × both pipelines × 2 seeds</div>
+              <div class="task-detail" style="margin-top: 8px;">
+                <strong>One-stage</strong>: YOLO 4-class detection+classification<br>
+                <strong>Two-stage</strong>: Binary FFB detector → crop → classifier (EfficientNet-B0 / ResNet-18 / YOLO-cls)<br>
+                Compare on dual-gate: mAP + M2/M3 + M3/M4 confusion
+              </div>
+              <div class="task-detail" style="margin-top: 6px; color: var(--text-muted); font-style: italic;">Prior evidence from related dataset: two-stage outperformed one-stage on maturity classification</div>
+            </div>
+          </div>
+        </div>
+        <div class="phase-end-note">
+          <span class="icon">⊳</span>
+          <span><strong>End-of-phase:</strong> Lock pipeline. >5% confusion improvement → two-stage. <2% → one-stage. 2-5% → judgment call. If results within noise, run extra seeds.</span>
+        </div>
+        <div class="deliverables">
+          <div class="deliverables-label">Locks</div>
+          <span class="tag">Pipeline (1-stage or 2-stage)</span>
+          <span class="tag">If 2-stage: best Stage 2 classifier</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+    <div class="arrow-down"></div>
+
+    <!-- ═══════ PHASE 1B ═══════ -->
+    <div class="phase-block p1">
+      <div class="phase-header">
+        <span class="phase-badge">PHASE 1B</span>
+        <span class="phase-title">Architecture Sweep</span>
+        <span class="phase-duration">~1.5 weeks</span>
+      </div>
+      <div class="phase-body">
+        <div class="tasks">
+          <div class="task-row">
+            <div class="task">
+              <div class="task-label">11 Architectures × 2 Seeds — within winning pipeline</div>
+              <div class="task-name">If 1-stage: sweep as 4-class detectors. If 2-stage: sweep as binary detectors + classifier variants.</div>
+              <div class="task-detail" style="margin-top: 8px;">
+                <span style="color:var(--text);">YOLOv8</span> n / s / m &nbsp;·&nbsp;
+                <span style="color:var(--text);">YOLOv9</span>-c &nbsp;·&nbsp;
+                <span style="color:var(--text);">YOLOv10</span> n / s / m &nbsp;·&nbsp;
+                <span style="color:var(--text); font-weight:600;">YOLO26</span> n / s / m &nbsp;·&nbsp;
+                <span style="color:var(--text);">YOLOv11</span>m
+              </div>
+              <div class="task-detail" style="margin-top: 6px;">lr0=0.001 · batch=16 · medium aug · patience=15–25 · per-class M1/M2/M3/M4 tracking</div>
+            </div>
+          </div>
+        </div>
+        <div class="phase-end-note">
+          <span class="icon">⊳</span>
+          <span><strong>End-of-phase:</strong> Why did winners win? Where do ALL models fail? Error stratification on worst 20 images per top-3 arch (incl. M2/M3 + M3/M4 confusion). If >10% label errors → STOP.</span>
+        </div>
+        <div class="deliverables">
+          <div class="deliverables-label">Output</div>
+          <span class="tag">Top 2–3 architectures (within winning pipeline)</span>
+          <span class="tag">M4 feasibility assessment</span>
+          <span class="tag">Failure mode categorization</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+
+    <!-- Gate: mAP threshold -->
+    <div class="gate gate-p1">
+      <div class="gate-diamond"><span>?</span></div>
+      <div class="gate-text"><strong>Best mAP ≥ 70%?</strong> (after Phase 1B)</div>
+      <div class="gate-outcomes">
+        <span class="gate-outcome gate-pass">≥70% → Phase 2</span>
+        <span class="gate-outcome gate-fail"><70% → STOP</span>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+    <div class="arrow-down"></div>
+
+    <!-- ═══════ PHASE 2 ═══════ -->
+    <div class="phase-block p2">
+      <div class="phase-header">
+        <span class="phase-badge">PHASE 2</span>
+        <span class="phase-title">Hyperparameter Optimization</span>
+        <span class="phase-duration">~1 week</span>
+      </div>
+      <div class="phase-body">
+        <div class="tasks">
+          <div class="task-row">
+            <div class="task" style="background: transparent; border: none; padding: 0 0 4px 0;">
+              <div class="task-detail">Sequential search on top 2–3 architectures × 2 seeds. Lock each parameter before moving to next.</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-sequence" style="margin-top: 4px;">
+          <div class="step-item">
+            <div class="step-num">STEP 0a</div>
+            <div class="step-name">Imbalance</div>
+            <div class="step-values">No weighting<br>Class-weighted<br>Focal (γ=1.5)</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">STEP 0b</div>
+            <div class="step-name">Ordinal</div>
+            <div class="step-values">Standard CE<br>Ordinal-weighted<br>CORAL*</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">STEP 1</div>
+            <div class="step-name">Learning Rate</div>
+            <div class="step-values">0.0005<br>0.001<br>0.002</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">STEP 2</div>
+            <div class="step-name">Batch Size</div>
+            <div class="step-values">8<br>16<br>32</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">STEP 3</div>
+            <div class="step-name">Augmentation</div>
+            <div class="step-values">Light<br>Medium<br>Heavy</div>
+          </div>
+        </div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:6px; font-family:'JetBrains Mono',monospace;">*CORAL available for two-stage pipeline only</div>
+        <div class="phase-end-note">
+          <span class="icon">⊳</span>
+          <span><strong>End-of-phase:</strong> Did optimization matter vs Phase 1 baseline? Imbalance vs ordinal — which was bigger lever for M2/M3 and M3/M4? If avg improvement <1%, revert to Phase 1 config.</span>
+        </div>
+        <div class="deliverables">
+          <div class="deliverables-label">Locks</div>
+          <span class="tag">Best config per architecture</span>
+          <span class="tag">Loss (imbalance + ordinal) · LR · Batch · Aug</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+
+    <div class="seed-note">Finalists: 3+ seeds for statistical confidence</div>
+
+    <div class="connector"></div>
+    <div class="arrow-down"></div>
+
+    <!-- ═══════ PHASE 3 ═══════ -->
+    <div class="phase-block p3">
+      <div class="phase-header">
+        <span class="phase-badge">PHASE 3</span>
+        <span class="phase-title">Final Validation</span>
+        <span class="phase-duration">~3 days</span>
+      </div>
+      <div class="phase-body">
+        <div class="tasks">
+          <div class="task-row">
+            <div class="task">
+              <div class="task-label">Retrain</div>
+              <div class="task-name">Train+Val Combined</div>
+              <div class="task-detail">All labeled data, frozen hyperparameters from Phase 2. Epochs 100→150, no early stopping.</div>
+            </div>
+            <div class="task">
+              <div class="task-label">Deploy Check</div>
+              <div class="task-name">TFLite Export + Quantization</div>
+              <div class="task-detail">Export, verify <100MB. Optional INT8 quantization (<2% mAP drop). Tablet test if hardware available.</div>
+            </div>
+          </div>
+          <div class="task-row">
+            <div class="task">
+              <div class="task-label">Calibrate</div>
+              <div class="task-name">Confidence Threshold Optimization</div>
+              <div class="task-detail">Sweep [0.1 – 0.5] on val split. Optimize for dual-gate: mAP@0.5 + M2/M3 confusion. Track M4 recall. Free — no retraining.</div>
+            </div>
+            <div class="task">
+              <div class="task-label">Analyze</div>
+              <div class="task-name">Error Stratification</div>
+              <div class="task-detail">Worst 20 images → categorize: small obj missed, M2/M3 confusion, occlusion, false positive, lighting, label error</div>
+            </div>
+          </div>
+        </div>
+        <div class="phase-end-note">
+          <span class="icon">⊳</span>
+          <span><strong>End-of-phase:</strong> Comprehensive error analysis. Categorize failure modes → root cause → maps to E1–E6 priorities. Final decision document for PI review.</span>
+        </div>
+        <div class="deliverables">
+          <div class="deliverables-label">Output</div>
+          <span class="tag">Final metrics @ optimized threshold</span>
+          <span class="tag">4-class confusion matrix</span>
+          <span class="tag">Error stratification table</span>
+          <span class="tag">Threshold-vs-metric curves</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+    <div class="arrow-down"></div>
+
+    <!-- ═══════ DECISION FRAMEWORK ═══════ -->
+    <div class="decision-block">
+      <div class="phase-header">
+        <span class="phase-badge">DECISION</span>
+        <span class="phase-title">Dual-Gate: mAP@0.5 + M2/M3 Confusion</span>
+      </div>
+      <div class="scenario-grid">
+        <div class="scenario s-excellent">
+          <div class="scenario-label">EXCELLENT</div>
+          <div class="scenario-criteria">mAP ≥90% · M2/M3 <20% · All classes ≥70%</div>
+          <div class="scenario-action">→ Deploy. Skip E1–E6.</div>
+        </div>
+        <div class="scenario s-good">
+          <div class="scenario-label">GOOD</div>
+          <div class="scenario-criteria">mAP 85–90% · M2/M3 20–30% · All classes ≥70%</div>
+          <div class="scenario-action">→ Deploy. Optional E1–E3.</div>
+        </div>
+        <div class="scenario s-acceptable">
+          <div class="scenario-label">ACCEPTABLE</div>
+          <div class="scenario-criteria">mAP 80–85% · M2/M3 >30% · All classes ≥70%</div>
+          <div class="scenario-action">→ Deploy baseline. E1–E3 mandatory.</div>
+        </div>
+        <div class="scenario s-needs">
+          <div class="scenario-label">NEEDS WORK</div>
+          <div class="scenario-criteria">mAP 75–80% OR some classes <70%</div>
+          <div class="scenario-action">→ Don't deploy. Full E1–E6.</div>
+        </div>
+        <div class="scenario s-insufficient">
+          <div class="scenario-label">INSUFFICIENT</div>
+          <div class="scenario-criteria">mAP <75%</div>
+          <div class="scenario-action">→ STOP. Investigate data quality, class definitions, task feasibility.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /flow -->
+</div><!-- /page -->
+</body>
+</html>

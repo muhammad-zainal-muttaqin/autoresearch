@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-RESULTS_PATH = Path("results.tsv")
+RESULTS_PATH = Path("experiments") / "results.tsv"
 OUTPUT_PATH = Path("progress.png")
 REQUIRED_COLUMNS = [
-    "commit",
     "val_map50",
     "val_map50_95",
-    "precision",
-    "recall",
-    "memory_gb",
     "status",
 ]
+
+# Decision metric per design doc: mAP@0.5
+METRIC_COL = "val_map50"
+METRIC_LABEL = "Validation mAP@0.5 (higher is better)"
 
 
 def human_label(row: pd.Series) -> str:
@@ -50,35 +50,42 @@ def main() -> None:
     if "title" not in df.columns:
         df["title"] = ""
 
-    df["status"] = df["status"].fillna("").astype(str).str.strip().str.lower()
+    # Use final_status if available, otherwise status
+    if "final_status" in df.columns:
+        df["effective_status"] = df["final_status"].fillna("").astype(str).str.strip().str.lower()
+        mask = df["effective_status"] == ""
+        df.loc[mask, "effective_status"] = df.loc[mask, "status"].fillna("").astype(str).str.strip().str.lower()
+    else:
+        df["effective_status"] = df["status"].fillna("").astype(str).str.strip().str.lower()
+
     df["description"] = df["description"].fillna("").astype(str).str.strip()
     df["title"] = df["title"].fillna("").astype(str).str.strip()
-    df["val_map50_95"] = pd.to_numeric(df["val_map50_95"], errors="coerce").fillna(0.0)
+    df[METRIC_COL] = pd.to_numeric(df[METRIC_COL], errors="coerce").fillna(0.0)
     df["iteration"] = range(1, len(df) + 1)
 
-    keep_df = df[df["status"] == "keep"].copy()
-    discarded_df = df[df["status"] != "keep"].copy()
-    keep_df["running_best"] = keep_df["val_map50_95"].cummax()
-    running_best_df = keep_df[keep_df["val_map50_95"] == keep_df["running_best"]].copy()
+    keep_df = df[df["effective_status"] == "keep"].copy()
+    discarded_df = df[df["effective_status"] != "keep"].copy()
+    keep_df["running_best"] = keep_df[METRIC_COL].cummax()
+    running_best_df = keep_df[keep_df[METRIC_COL] == keep_df["running_best"]].copy()
 
     fig, ax = plt.subplots(figsize=(14, 7), constrained_layout=True)
 
     if not discarded_df.empty:
         ax.scatter(
             discarded_df["iteration"],
-            discarded_df["val_map50_95"],
+            discarded_df[METRIC_COL],
             s=10,
             color="#cfcfcf",
             alpha=0.8,
             edgecolors="none",
-            label="Discarded / infra",
+            label="Discarded / infra / parked",
             zorder=1,
         )
 
     if not keep_df.empty:
         ax.scatter(
             keep_df["iteration"],
-            keep_df["val_map50_95"],
+            keep_df[METRIC_COL],
             s=22,
             color="#37b26c",
             edgecolors="#1f7a4c",
@@ -97,14 +104,14 @@ def main() -> None:
             zorder=2,
         )
 
-    max_value = float(df["val_map50_95"].max())
-    min_value = float(df["val_map50_95"].min())
+    max_value = float(df[METRIC_COL].max())
+    min_value = float(df[METRIC_COL].min())
     value_span = max(max_value - min_value, 0.02)
 
     last_labeled_x = -10
     for _, row in running_best_df.iterrows():
         x = int(row["iteration"])
-        y = float(row["val_map50_95"])
+        y = float(row[METRIC_COL])
         if x - last_labeled_x < 2 and y < max_value - 0.01:
             continue
         ax.annotate(
@@ -127,7 +134,7 @@ def main() -> None:
         fontsize=12,
     )
     ax.set_xlabel("Experiment #", fontsize=9)
-    ax.set_ylabel("Validation mAP50-95 (higher is better)", fontsize=9)
+    ax.set_ylabel(METRIC_LABEL, fontsize=9)
     ax.grid(True, color="#e9ecef", linewidth=0.8, alpha=0.8)
 
     tick_step = max(1, math.ceil(len(df) / 12))

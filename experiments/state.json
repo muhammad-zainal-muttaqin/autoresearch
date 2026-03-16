@@ -4,9 +4,9 @@
   "main_best": {
     "source": "legacy",
     "exp_id": "",
-    "commit": "d9a3ded",
-    "score": 0.269424,
-    "title": "legacy best 4-class run"
+    "commit": "3a557ad",
+    "score": 0.55528,
+    "title": "yolo11l imgsz 640 batch 16 NEW BEST! B2=0.210"
   },
   "active_exploration": null,
   "exploration_best": null,

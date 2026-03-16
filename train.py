@@ -2,26 +2,37 @@
 Editable experiment surface for autoresearch.
 
 Normal mode:
-- edit this file
-- optionally edit research.py for nontrivial model/pipeline work
+- edit this file for hyperparameters and config
+- optionally edit modeling.py for model changes (custom heads, losses)
+- optionally edit pipeline.py for pipeline changes (two-stage, augmentation)
 - run `uv run train.py`
+
+Separation principle:
+- modeling.py changes frequently (custom heads, losses)
+- pipeline.py changes less often but more dramatically (pipeline restructuring)
+- train.py stays mostly stable (config knobs)
+- Most experiments should only require editing one or two files
 """
 
 from prepare import DATA_YAML, DEFAULT_TIME_HOURS, RUNS_ROOT
 
+# ── Experiment Metadata ─────────────────────────────────────────────────────
 EXPERIMENT_TITLE = "baseline probe"
 HYPOTHESIS = "If I run the small-model probe baseline, I will get a comparable signal for the next decision."
-SUCCESS_CRITERION = "Match or beat the current comparable main baseline on val_map50_95."
+SUCCESS_CRITERION = "Match or beat the current main baseline on mAP@0.5."
 TRACK_HINT = "auto"  # one of: auto, main, exploration
 EXPLORATION_NAME = ""
 
+# ── Model ────────────────────────────────────────────────────────────────────
 MODEL = "yolo11s.pt"
 
+# ── Budget ───────────────────────────────────────────────────────────────────
 TIME_HOURS = DEFAULT_TIME_HOURS
-EPOCHS = 40
+EPOCHS = 30  # default per design: epoch=30 + early stopping
 PATIENCE = 15
-SEED = 42
+SEED = 42  # confirmation reruns use seed=123
 
+# ── Optimizer ────────────────────────────────────────────────────────────────
 OPTIMIZER = "AdamW"
 LR0 = 0.001
 LRF = 0.01
@@ -30,9 +41,11 @@ WEIGHT_DECAY = 0.0005
 WARMUP_EPOCHS = 3.0
 COS_LR = True
 
+# ── Data ─────────────────────────────────────────────────────────────────────
 BATCH = 16
 IMGSZ = 640
 
+# ── Augmentation ─────────────────────────────────────────────────────────────
 MOSAIC = 1.0
 MIXUP = 0.0
 COPY_PASTE = 0.0
@@ -49,11 +62,13 @@ FLIPLR = 0.5
 ERASING = 0.4
 CLOSE_MOSAIC = 10
 
+# ── Loss ─────────────────────────────────────────────────────────────────────
 BOX = 7.5
 CLS = 0.5
 DFL = 1.5
 LABEL_SMOOTHING = 0.0
 
+# ── Other ────────────────────────────────────────────────────────────────────
 FREEZE = None
 AMP = True
 
@@ -113,7 +128,6 @@ def build_experiment_spec() -> dict:
         "model_ref": MODEL,
         "train_args": train_args,
         "imgsz": IMGSZ,
-        "research_module": "research",
     }
 
 

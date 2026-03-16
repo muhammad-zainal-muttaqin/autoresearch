@@ -1,3 +1,6 @@
 # Experiment Log
 
-Historical runs before BBC Core v1 remain in `results.tsv` and `logs/`.
+Historical runs before BBC Design v1 remain in `experiments/results.tsv` and `logs/`.
+
+---
+

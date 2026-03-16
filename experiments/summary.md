@@ -1,14 +1,8 @@
-# Summary
-
 ## Current Best
-Main: legacy best 4-class run (score=0.269424, exp=d9a3ded)
-Exploration: none
-
-## Active Exploration
-- None.
+Main: legacy best, yolo11l imgsz 640 batch 16, mAP@0.5 = 0.55528
 
 ## Key Findings
-- No confirmed kept improvements in the current tracked window.
+- No confirmed kept improvements since BBC Design v1 initialization.
 
 ## Dead Ends
 - None.

@@ -2,34 +2,41 @@
 
 ![teaser](progress.png)
 
-This repository runs Karpathy-style autonomous research for 4-class oil palm fruit bunch detection.
+BBC Autoresearch: an AI agent runs hypothesis-driven research for 4-class oil palm fruit bunch detection, proposing and testing novel techniques (architecture changes, feature engineering, pipeline restructuring, custom losses).
 
-The live surface is intentionally narrow:
-- `train.py` is the editable experiment spec
-- `research.py` is the only second editable file for nontrivial model or pipeline changes
-- `prepare.py` is the frozen evaluator
-- `orchestrator.py` is the frozen runtime and state manager
+The primary decision metric is `mAP@0.5`.
 
-The primary decision metric is `val_map50_95`.
-
-## Live Surface
+## File Structure
 
 ```text
-train.py                editable experiment metadata + config
-research.py             editable research hook for nontrivial changes
-prepare.py              frozen dataset/evaluation harness
-orchestrator.py         frozen runtime, gates, state, logging, batching
-program.md              operating brief
-context.md              human steering context
-results.tsv             canonical ledger
-experiments/            machine-managed state, summary, log, reports
-logs/                   raw run logs
+# FROZEN — agent cannot modify
+prepare.py              data loading, splitting, evaluation, metrics
+orchestrator.py         experiment state, compilation gate, guardrails, logging
+
+# AGENT-EDITABLE
+modeling.py             model modifications, custom heads, feature branches, losses
+pipeline.py             pipeline structure, stage orchestration, augmentation, inference
+train.py                hyperparameters at top, wires pipeline + modeling
+
+# HUMAN-EDITABLE
+program.md              agent instructions, guardrails, coding patterns appendix
+context/                research_overview.md, domain_knowledge.md, e0_results.md
+
+# GENERATED
+experiments/
+  state.json            baselines, experiment counter, branch status
+  log.md                full experiment log
+  summary.md            agent's distilled research notebook
+  results.tsv           structured metrics ledger
+  batch_NNN_report.md   human-facing batch summary
+
+logs/                   raw timestamped training output
 plot_progress.py        regenerate progress.png from results.tsv
 progress.png            visual progress chart
 archive/                non-default historical material
 ```
 
-Datasets and generated training outputs under `runs/` are local-only artifacts and should not be committed.
+Datasets and generated training outputs under `runs/` are local-only artifacts.
 
 ## Quick Start
 
@@ -39,36 +46,45 @@ uv run prepare.py
 uv run train.py
 ```
 
-Open the next batch explicitly with:
+## Commands
 
 ```bash
+# Run one experiment
+uv run train.py
+
+# Override a decision
+uv run orchestrator.py decide <exp_id> <KEEP|DISCARD|PARK> <justification>
+
+# Advance to next batch
 uv run orchestrator.py next-batch
+
+# Regenerate progress chart
+uv run python plot_progress.py
 ```
 
 ## Operating Rules
 
-- edit `train.py` for normal experiments
-- edit `research.py` only when the experiment needs structural changes
-- do not edit `prepare.py` or `orchestrator.py` during normal agent operation
-- keep raw logs in `logs/`
-- treat `results.tsv` as the canonical metric ledger
-- treat `experiments/` as machine-managed memory, not the main experiment surface
+- Edit `train.py` for normal experiments (hyperparameter changes → main track)
+- Edit `modeling.py` for model changes (custom heads, losses → exploration track)
+- Edit `pipeline.py` for pipeline changes (two-stage, augmentation → exploration track)
+- Do not edit `prepare.py` or `orchestrator.py` during normal agent operation
+- Every experiment requires a title, hypothesis, and success criterion
+- Decision metric: mAP@0.5 for keep/discard; analyze all metrics for insight
+- Seeds: 42 for regular experiments, 123 for confirmation reruns
 
-## Dataset Expectations
+## Dataset
 
-The dataset must follow standard YOLO structure:
+Standard YOLO structure:
 
 ```text
 Dataset-YOLO/
   data.yaml
-  images/train
-  images/val
-  images/test
-  labels/train
-  labels/val
-  labels/test
+  images/{train,val,test}
+  labels/{train,val,test}
 ```
+
+4 classes: B1 (unripe), B2 (underripe), B3 (ripe), B4 (overripe)
 
 ## Analysis
 
-Use `archive/analysis.ipynb` for ad hoc inspection. Regenerate `progress.png` with `uv run python plot_progress.py` after recording a comparable result.
+Use `archive/analysis.ipynb` for ad hoc inspection. Regenerate `progress.png` with `uv run python plot_progress.py`.
