@@ -2,3 +2,4 @@ run_id,phase,model,imgsz,seed,batch,lr0,aug,data_fraction,epochs_completed,map50
 p1b_yolov8n_s0,1B,yolov8n.pt,640,0,16,0.001,medium,1.0,,,,,,,,,,,,,,,,,,,,,fail
 p0b_res640_s0,0B,yolo11s.pt,640,0,16,0.001,medium,1.0,,,,,,,,,,,,,,,,,,,,,fail
 p1b_yolov8n_s42,1B,yolov8n.pt,640,42,16,0.001,medium,1.0,,,,,,,,,,,,,,,,,,,,,fail
+p0b_res640_s42,0B,yolo11s.pt,640,42,16,0.001,medium,1.0,,,,,,,,,,,,,,,,,,,,,fail
