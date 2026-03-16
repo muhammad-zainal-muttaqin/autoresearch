@@ -5,6 +5,16 @@ set -uo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 REPO="/workspace/autoresearch-bbc-v1"
 BRANCH="bbc-autoresearch-v1"
+LOCKFILE="/tmp/e0_running.lock"
+
+# Prevent parallel instances — only one may run at a time
+if [ -e "$LOCKFILE" ]; then
+  EXISTING_PID=$(cat "$LOCKFILE" 2>/dev/null || echo "unknown")
+  echo "[ERROR] Another E0 instance is running (PID $EXISTING_PID). Exiting."
+  exit 1
+fi
+echo $$ > "$LOCKFILE"
+trap 'rm -f "$LOCKFILE"' EXIT INT TERM
 
 # Set remote with token
 if [ -n "${GITHUB_TOKEN:-}" ]; then
