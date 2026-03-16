@@ -1,0 +1,1 @@
+/workspace/autoresearch-bbc-v1/Dataset-YOLO/labels/train/LONSUM_A21A_0088_1.txt
