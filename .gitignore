@@ -50,5 +50,16 @@ hier_b23_supcon_run.log
 hier_sweep_run.log
 hier_eval_supcon_run.log
 
-# YOLO training outputs
-runs/
+# YOLO training outputs — root-level only; e0_results/runs/ is tracked
+/runs/
+
+# Track e0_results (exclude model weights)
+!e0_results/
+!e0_results/**
+e0_results/**/*.pt
+e0_results/**/*.pth
+e0_results/**/*.pth.tar
+
+# Track logs/
+!logs/
+!logs/**

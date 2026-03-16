@@ -1,5 +1,13 @@
 # autoresearch
 
+## E0 Baseline Protocol Progress
+
+![E0 progress](e0_progress.png)
+
+> E0 is the automated baseline sweep (resolution, learning curve, architecture, hyperparameter). Results unlock techniques for the E1+ agent research track.
+
+## Agent Research Progress (E1+)
+
 ![teaser](progress.png)
 
 BBC Autoresearch: an AI agent runs hypothesis-driven research for 4-class oil palm fruit bunch detection, proposing and testing novel techniques (architecture changes, feature engineering, pipeline restructuring, custom losses).
