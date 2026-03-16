@@ -293,6 +293,7 @@ def run_training(
         name=run_dir.name,
         exist_ok=True,
         verbose=False,
+        workers=4,
         **aug,
     )
     if extra_args:

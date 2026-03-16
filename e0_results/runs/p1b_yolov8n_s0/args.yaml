@@ -1,6 +1,6 @@
 task: detect
 mode: train
-model: yolo11s.pt
+model: yolov8n.pt
 data: /workspace/autoresearch-bbc-v1/Dataset-YOLO/data.yaml
 epochs: 40
 time: null
@@ -11,9 +11,9 @@ save: true
 save_period: -1
 cache: false
 device: null
-workers: 4
+workers: 8
 project: /workspace/autoresearch-bbc-v1/e0_results/runs
-name: p0b_res640_s0
+name: p1b_yolov8n_s0
 exist_ok: true
 pretrained: true
 optimizer: AdamW
@@ -106,4 +106,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: /workspace/autoresearch-bbc-v1/e0_results/runs/p0b_res640_s0
+save_dir: /workspace/autoresearch-bbc-v1/e0_results/runs/p1b_yolov8n_s0
