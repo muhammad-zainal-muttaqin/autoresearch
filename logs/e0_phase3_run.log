@@ -1017,3 +1017,72 @@ warning: Failed to hardlink files; falling back to full copy. This may lead to d
 Installed 1 package in 8.42s
 Saved plot to progress.png
 Saved e0_progress.png  (20 runs, 2 improvements)
+[bbc-autoresearch-v1 7393ebf] chore: E0 results — Phase-3-partial — 2026-03-16 20:09
+ 60 files changed, 1358 insertions(+), 3 deletions(-)
+ rewrite e0_progress.png (97%)
+ create mode 100644 e0_results/plots/cm_p3_final_yolo11s_s0.npy
+ create mode 100644 e0_results/plots/cm_p3_final_yolo11s_s42.npy
+ create mode 100644 e0_results/plots/p3_confidence_sweep.png
+ create mode 100644 e0_results/plots/p3_confusion_matrix.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/BoxF1_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/BoxPR_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/BoxP_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/BoxR_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/args.yaml
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/confusion_matrix.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/confusion_matrix_normalized.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/results.csv
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/results.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/train_batch0.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/train_batch1.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/train_batch2.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/train_batch5190.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/train_batch5191.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/train_batch5192.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/val_batch0_labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/val_batch0_pred.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/val_batch1_labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/val_batch1_pred.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/val_batch2_labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s0/val_batch2_pred.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/BoxF1_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/BoxPR_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/BoxP_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/BoxR_curve.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/args.yaml
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/confusion_matrix.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/confusion_matrix_normalized.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/results.csv
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/results.png
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/train_batch0.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/train_batch1.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/train_batch2.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/train_batch5190.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/train_batch5191.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/train_batch5192.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/val_batch0_labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/val_batch0_pred.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/val_batch1_labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/val_batch1_pred.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/val_batch2_labels.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/val_batch2_pred.jpg
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best.onnx
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/best_float16.tflite
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/best_float32.tflite
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/fingerprint.pb
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/metadata.yaml
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/saved_model.pb
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/variables/variables.data-00000-of-00001
+ create mode 100644 e0_results/runs/p3_final_yolo11s_s42/weights/best_saved_model/variables/variables.index
+ create mode 100644 logs/e0_phase3_run.log
+To https://github.com/muhammad-zainal-muttaqin/autoresearch.git
+   f5b4538..7393ebf  bbc-autoresearch-v1 -> bbc-autoresearch-v1
+[push] pushed: Phase-3-partial
+
+=== E0 Protocol finished. Final push. ===
+
+=== [PUSH] E0-final ===
+Saved plot to progress.png
+Saved e0_progress.png  (20 runs, 2 improvements)
