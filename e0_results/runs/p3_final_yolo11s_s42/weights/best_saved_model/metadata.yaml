@@ -1,0 +1,25 @@
+description: Ultralytics YOLO11s model trained on /workspace/autoresearch-bbc-v1/Dataset-YOLO/data.yaml
+author: Ultralytics
+date: '2026-03-16T19:51:53.774539'
+version: 8.4.21
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 1024
+- 1024
+names:
+  0: B1
+  1: B2
+  2: B3
+  3: B4
+args:
+  batch: 1
+  fraction: 1.0
+  half: false
+  int8: false
+  nms: false
+channels: 3
+end2end: false
