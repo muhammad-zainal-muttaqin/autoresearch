@@ -7,6 +7,12 @@ export PATH="$HOME/.local/bin:$PATH"
 REPO="/workspace/autoresearch-bbc-v1"
 BRANCH="bbc-autoresearch-v1"
 
+# Ensure remote URL has token
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  git -C "$REPO" remote set-url origin \
+    "https://${GITHUB_TOKEN}@github.com/muhammad-zainal-muttaqin/autoresearch.git" 2>/dev/null || true
+fi
+
 cd "$REPO"
 
 # Regenerate progress charts
