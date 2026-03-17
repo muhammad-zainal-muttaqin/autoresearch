@@ -38,15 +38,15 @@ Penelitian ini bertujuan membangun sistem deteksi otomatis untuk mengklasifikasi
 
 | Kelas | Kematangan | Karakteristik Visual |
 |:-----:|:----------:|:---------------------|
-| **B1** | Mentah (Unripe) | Buah berwarna ungu gelap/hitam, fruitlet rapat dan kompak |
-| **B2** | Kurang Matang (Underripe) | Sebagian fruitlet oranye mulai terlihat, mayoritas masih gelap |
-| **B3** | Matang (Ripe) | Dominan oranye/merah, fruitlet mulai longgar |
-| **B4** | Lewat Matang (Overripe) | Oranye tua/cokelat, sangat longgar, sebagian fruitlet jatuh |
+| **B1** | Matang (Ripe) | Buah berwarna merah/oranye, visual distinktif, fruitlet mulai longgar |
+| **B2** | Hampir Matang (Near-ripe) | Hitam, ukuran besar, beberapa perubahan warna awal |
+| **B3** | Belum Matang (Unripe) | Hitam, ukuran sedang, fruitlet rapat |
+| **B4** | Tidak Matang (Very Unripe) | Hitam, ukuran kecil, fruitlet sangat rapat dan kompak |
 
 ### 1.3 Tantangan Utama
 
-- **Overlap B2/B3**: Transisi dari kurang matang ke matang bersifat gradual — warna dan tekstur adalah pembeda utama, bukan bentuk atau ukuran. Kedua kelas tumpang tindih ~84% dalam ukuran bounding box.
-- **Kelangkaan B4**: Kelas overripe kurang terwakili dalam dataset.
+- **Overlap B2/B3**: Kedua kelas merupakan tandan hitam, dibedakan terutama oleh ukuran (B2=besar, B3=sedang), namun distribusi ukuran tumpang tindih ~84%.
+- **Kelangkaan B4**: B4 adalah kelas paling muda dengan ukuran paling kecil, kurang terwakili dalam dataset.
 - **Oklusi**: Tandan sering terhalang pelepah dan vegetasi lain.
 - **Variasi pencahayaan**: Kanopi perkebunan menghasilkan kondisi cahaya yang sangat bervariasi.
 
@@ -130,13 +130,15 @@ Phase 0 (Validasi)  →  Phase 1 (Arsitektur)  →  Phase 2 (Hyperparameter)  �
 | B4 | 2.343 | ~550 | ~560 | ~3.453 |
 
 - **B3 mendominasi** dataset dengan ~46% dari total anotasi
-- **B1 paling sedikit** dengan ~12% dari total
+- **B1 paling sedikit** dengan ~12% dari total — meskipun minoritas, kelas ini paling mudah dideteksi karena warna merah/oranye yang distinktif
 - Rasio imbalance B3:B1 ≈ 3.7:1
 - Distribusi proporsional antar split (stratified split berhasil)
 
 </td>
 </tr>
 </table>
+
+> *Sumber: [phase0a_eda_report.md](e0_results/reports/phase0a_eda_report.md) | Plot: [eda_class_distribution.png](e0_results/plots/eda_class_distribution.png)*
 
 #### 3.1.2 Distribusi Ukuran Bounding Box
 
@@ -152,14 +154,16 @@ Phase 0 (Validasi)  →  Phase 1 (Arsitektur)  →  Phase 2 (Hyperparameter)  �
 **Temuan Ukuran Objek:**
 
 - Mayoritas bounding box berukuran **30-100 piksel** pada resolusi 640px
-- B2 dan B3 memiliki **distribusi ukuran yang hampir identik** — ini mengkonfirmasi bahwa ukuran bukan pembeda yang baik antar kedua kelas
-- B4 cenderung sedikit lebih kecil, namun overlap signifikan
-- B1 memiliki variasi terluas
+- B2 dan B3 memiliki **distribusi ukuran yang hampir identik** — kedua kelas berwarna hitam dan distribusi ukurannya tumpang tindih, menjadikan diskriminasi sangat sulit
+- B4 merupakan kelas dengan ukuran paling kecil, namun overlap signifikan dengan kelas lain
+- B1 (tandan matang merah/oranye) memiliki variasi ukuran terluas
 - **Minimum dimension B4** mencapai ~15-20px, mendekati batas deteksi YOLO
 
 </td>
 </tr>
 </table>
+
+> *Sumber: [phase0a_eda_report.md](e0_results/reports/phase0a_eda_report.md) | Plot: [eda_bbox_sizes.png](e0_results/plots/eda_bbox_sizes.png)*
 
 #### 3.1.3 Label Statistics & Spatial Distribution
 
@@ -183,6 +187,8 @@ Phase 0 (Validasi)  →  Phase 1 (Arsitektur)  →  Phase 2 (Hyperparameter)  �
 </td>
 </tr>
 </table>
+
+> *Sumber: [phase0a_eda_report.md](e0_results/reports/phase0a_eda_report.md) | Label stats: [p1b_yolo11s_s42/labels.jpg](e0_results/runs/p1b_yolo11s_s42/labels.jpg)*
 
 ### 3.2 Task B: Resolution Sweep (Phase 0B)
 
@@ -228,6 +234,8 @@ Phase 0 (Validasi)  →  Phase 1 (Arsitektur)  →  Phase 2 (Hyperparameter)  �
 </td>
 </tr>
 </table>
+
+> *Sumber: [results.csv](e0_results/results.csv) | Runs: [p0b_res640_s0](e0_results/runs/p0b_res640_s0/results.csv), [p0b_res640_s42](e0_results/runs/p0b_res640_s42/results.csv), [p0b_res1024_s0](e0_results/runs/p0b_res1024_s0/results.csv), [p0b_res1024_s42](e0_results/runs/p0b_res1024_s42/results.csv) | Plot: [p0b_resolution_comparison.png](e0_results/plots/p0b_resolution_comparison.png)*
 
 #### 3.2.4 Kesimpulan Phase 0B
 
@@ -282,6 +290,8 @@ Model: YOLO11s, imgsz 640, batch 16, 40 epochs, patience 15.
 </td>
 </tr>
 </table>
+
+> *Sumber: [results.csv](e0_results/results.csv) | Runs: [p0c_frac25_s0](e0_results/runs/p0c_frac25_s0/results.csv), [p0c_frac25_s42](e0_results/runs/p0c_frac25_s42/results.csv), [p0c_frac50_s0](e0_results/runs/p0c_frac50_s0/results.csv), [p0c_frac50_s42](e0_results/runs/p0c_frac50_s42/results.csv), [p0c_frac75_s0](e0_results/runs/p0c_frac75_s0/results.csv), [p0c_frac75_s42](e0_results/runs/p0c_frac75_s42/results.csv), [p0c_frac100_s0](e0_results/runs/p0c_frac100_s0/results.csv), [p0c_frac100_s42](e0_results/runs/p0c_frac100_s42/results.csv) | Plot: [p0c_learning_curves.png](e0_results/plots/p0c_learning_curves.png)*
 
 #### 3.3.4 Kesimpulan Phase 0C
 
@@ -359,6 +369,8 @@ YOLO11s dan YOLOv8s **essentially tied** — selisih hanya 0.001.
 </tr>
 </table>
 
+> *Sumber: [results.csv](e0_results/results.csv) | Plot: [p1b_architecture_sweep.png](e0_results/plots/p1b_architecture_sweep.png) | Runs: [p1b_yolo11s_s0/results.csv](e0_results/runs/p1b_yolo11s_s0/results.csv), [p1b_yolo11s_s42/results.csv](e0_results/runs/p1b_yolo11s_s42/results.csv), [p1b_yolov8s_s0/results.csv](e0_results/runs/p1b_yolov8s_s0/results.csv), [p1b_yolov8s_s42/results.csv](e0_results/runs/p1b_yolov8s_s42/results.csv)*
+
 #### 4.2.4 Performa Per-Kelas
 
 | Arsitektur | AP B1 | AP B2 | AP B3 | AP B4 |
@@ -370,17 +382,21 @@ YOLO11s dan YOLOv8s **essentially tied** — selisih hanya 0.001.
 | YOLOv10s | 0.777 | 0.388 | 0.548 | 0.317 |
 | YOLOv10n | 0.772 | 0.379 | 0.518 | 0.296 |
 
+> *Sumber: [results.csv](e0_results/results.csv) | Runs: [p1b_yolo11s_s0/results.csv](e0_results/runs/p1b_yolo11s_s0/results.csv), [p1b_yolo11s_s42/results.csv](e0_results/runs/p1b_yolo11s_s42/results.csv), [p1b_yolo11n_s0/results.csv](e0_results/runs/p1b_yolo11n_s0/results.csv), [p1b_yolo11n_s42/results.csv](e0_results/runs/p1b_yolo11n_s42/results.csv), [p1b_yolov8s_s0/results.csv](e0_results/runs/p1b_yolov8s_s0/results.csv), [p1b_yolov8s_s42/results.csv](e0_results/runs/p1b_yolov8s_s42/results.csv)*
+
 #### 4.2.5 Kesimpulan Phase 1B
 
 - **YOLO11s dipilih** sebagai arsitektur terbaik — unggul tipis di mAP@0.5 dan mAP@50-95 atas YOLOv8s
 - Perbedaan antar arsitektur top-4 **sangat kecil** (~0.6%), menunjukkan bahwa **bottleneck bukan arsitektur** melainkan diskriminasi fitur kelas
 - **YOLOv10 series underperform** — NMS-free head tidak memberikan keuntungan pada task ini
-- **B2 AP konsisten rendah (~0.42) di semua arsitektur** — konfirmasi bahwa B2/B3 confusion adalah masalah fitur visual, bukan arsitektur
-- B4 AP ~0.37 juga rendah di semua arsitektur — terkait ukuran kecil dan class imbalance
+- **B2 AP konsisten rendah (~0.42) di semua arsitektur** — konfirmasi bahwa B2/B3 confusion adalah masalah fundamental: kedua kelas hitam sulit dibedakan, bukan masalah arsitektur
+- B4 AP ~0.37 juga rendah di semua arsitektur — B4 adalah kelas paling kecil dan berwarna hitam, terkait ukuran kecil dan class imbalance
 
 **GO/NO-GO Gate**: Protokol mensyaratkan best mAP ≥70% untuk lanjut ke Phase 2. Hasil terbaik adalah **0.546 (<70%)** — secara protokol, E0 seharusnya di-review sebelum melanjutkan. Namun eksekusi tetap dilanjutkan ke Phase 3.
 
 ---
+
+> *Sumber: [results.csv](e0_results/results.csv) | Plot: [p1b_architecture_sweep.png](e0_results/plots/p1b_architecture_sweep.png) | Confusion: [p1b_yolo11s_s42/confusion_matrix_normalized.png](e0_results/runs/p1b_yolo11s_s42/confusion_matrix_normalized.png)*
 
 ## 5. Phase 2: Optimasi Hyperparameter — Tidak Dilaksanakan
 
@@ -440,6 +456,8 @@ Phase 3 melatih ulang model terbaik (YOLO11s) untuk evaluasi final.
 </tr>
 </table>
 
+> *Sumber: [p3_final_yolo11s_s42/results.csv](e0_results/runs/p3_final_yolo11s_s42/results.csv) | Plot: [p3_final_yolo11s_s42/results.png](e0_results/runs/p3_final_yolo11s_s42/results.png)*
+
 ### 6.3 Hasil Evaluasi Final (YOLO11s, 1024px)
 
 **Rata-rata 2 seeds (s0, s42):**
@@ -454,6 +472,8 @@ Phase 3 melatih ulang model terbaik (YOLO11s) untuk evaluasi final.
 | AP B2 | 0.425 |
 | AP B3 | 0.587 |
 | AP B4 | 0.388 |
+
+> *Sumber: [results.csv](e0_results/results.csv) | Runs: [p3_final_yolo11s_s0/results.csv](e0_results/runs/p3_final_yolo11s_s0/results.csv), [p3_final_yolo11s_s42/results.csv](e0_results/runs/p3_final_yolo11s_s42/results.csv)*
 
 ### 6.4 Precision-Recall & F1 Curves
 
@@ -500,6 +520,8 @@ B1 sangat baik, B2 dan B4 problematik.
 </tr>
 </table>
 
+> *Sumber: [p3_final_yolo11s_s42/BoxPR_curve.png](e0_results/runs/p3_final_yolo11s_s42/BoxPR_curve.png) | [p3_final_yolo11s_s42/BoxF1_curve.png](e0_results/runs/p3_final_yolo11s_s42/BoxF1_curve.png) | Metrics: [results.csv](e0_results/results.csv), [p3_final_yolo11s_s42/results.csv](e0_results/runs/p3_final_yolo11s_s42/results.csv)*
+
 ### 6.5 Confidence Threshold Optimization
 
 <table>
@@ -528,6 +550,8 @@ B1 sangat baik, B2 dan B4 problematik.
 </td>
 </tr>
 </table>
+
+> *Sumber: [p3_confidence_sweep.png](e0_results/plots/p3_confidence_sweep.png) | Run metrics: [p3_final_yolo11s_s42/results.csv](e0_results/runs/p3_final_yolo11s_s42/results.csv) | Sweep logic: [e0_protocol.py](e0_protocol.py)*
 
 ### 6.6 Contoh Prediksi Visual
 
@@ -559,6 +583,8 @@ Perbandingan di atas menunjukkan bahwa model cukup baik mendeteksi **lokasi** TB
 
 ---
 
+> *Sumber: [p3_final_yolo11s_s42/val_batch0_labels.jpg](e0_results/runs/p3_final_yolo11s_s42/val_batch0_labels.jpg) | [p3_final_yolo11s_s42/val_batch0_pred.jpg](e0_results/runs/p3_final_yolo11s_s42/val_batch0_pred.jpg)*
+
 ## 7. Analisis Confusion Matrix
 
 ### 7.1 Confusion Matrix — Phase 1B (YOLO11s, 640px, val set)
@@ -581,14 +607,16 @@ Perbandingan di atas menunjukkan bahwa model cukup baik mendeteksi **lokasi** TB
 | **B3** | — | 0.10 | **0.59** | 0.05 | 0.26 |
 | **B4** | — | 0.01 | 0.29 | **0.28** | 0.41 |
 
-- B1 paling baik dikenali (76%)
-- **B2/B3 confusion sangat tinggi** (B2→B3: 34%, B3→B2: 10%)
-- B4 sering missed (41% ke background)
+- B1 paling baik dikenali (76%) — karena warna merah/oranye yang distinktif
+- **B2/B3 confusion sangat tinggi** (B2→B3: 34%, B3→B2: 10%) — keduanya tandan hitam dengan ukuran tumpang tindih
+- B4 sering missed (41% ke background) — B4 paling kecil dan berwarna hitam, sulit dideteksi
 - B2 hanya 34% correct — paling problematis
 
 </td>
 </tr>
 </table>
+
+> *Sumber: [p1b_yolo11s_s42/confusion_matrix_normalized.png](e0_results/runs/p1b_yolo11s_s42/confusion_matrix_normalized.png) | Matrix: [cm_p1b_yolo11s_s42.npy](e0_results/plots/cm_p1b_yolo11s_s42.npy)*
 
 ### 7.2 Confusion Matrix — Phase 3 (YOLO11s, 1024px, val set)
 
@@ -620,6 +648,8 @@ Perbandingan di atas menunjukkan bahwa model cukup baik mendeteksi **lokasi** TB
 </tr>
 </table>
 
+> *Sumber: [p3_final_yolo11s_s42/confusion_matrix_normalized.png](e0_results/runs/p3_final_yolo11s_s42/confusion_matrix_normalized.png) | Matrix: [cm_p3_final_yolo11s_s42.npy](e0_results/plots/cm_p3_final_yolo11s_s42.npy)*
+
 ### 7.3 Perbandingan Phase 1B (640px) vs Phase 3 (1024px)
 
 | Metrik | Phase 1B (640px) | Phase 3 (1024px) | Perubahan |
@@ -635,6 +665,8 @@ Perbandingan di atas menunjukkan bahwa model cukup baik mendeteksi **lokasi** TB
 
 ---
 
+> *Sumber: [cm_p1b_yolo11s_s42.npy](e0_results/plots/cm_p1b_yolo11s_s42.npy) | [cm_p3_final_yolo11s_s42.npy](e0_results/plots/cm_p3_final_yolo11s_s42.npy) | Visuals: [p1b_yolo11s_s42/confusion_matrix_normalized.png](e0_results/runs/p1b_yolo11s_s42/confusion_matrix_normalized.png), [p3_final_yolo11s_s42/confusion_matrix_normalized.png](e0_results/runs/p3_final_yolo11s_s42/confusion_matrix_normalized.png)*
+
 ## 8. Keputusan E0: Decision Framework
 
 ### 8.1 Performa Akhir vs Target
@@ -648,11 +680,15 @@ Perbandingan di atas menunjukkan bahwa model cukup baik mendeteksi **lokasi** TB
 | AP B3 | 0.587 | ≥ 70% (0.70) | BELUM TERCAPAI |
 | AP B4 | 0.388 | ≥ 70% (0.70) | BELUM TERCAPAI |
 
+> *Sumber: [results.csv](e0_results/results.csv) | Runs: [p3_final_yolo11s_s0/results.csv](e0_results/runs/p3_final_yolo11s_s0/results.csv), [p3_final_yolo11s_s42/results.csv](e0_results/runs/p3_final_yolo11s_s42/results.csv) | Confusion: [cm_p3_final_yolo11s_s42.npy](e0_results/plots/cm_p3_final_yolo11s_s42.npy)*
+
 ### 8.2 Penentuan Skenario
 
 Dengan mAP@0.5 = **0.558 (<75%)**, E0 berada di **Skenario 5: Insufficient**.
 
 > **Interpretasi**: Terdapat isu fundamental dengan diskriminasi kelas kematangan. mAP@0.5 jauh di bawah target deployment (85%). Hanya B1 yang mencapai target per-class AP (≥70%). B2, B3, dan B4 semuanya di bawah target.
+
+> *Sumber: [results.csv](e0_results/results.csv) | Protokol: [E0_Baseline_Experimental_Protocol.md](E0_Baseline_Experimental_Protocol.md)*
 
 ### 8.3 Model Terbaik E0
 
@@ -666,9 +702,11 @@ mAP@0.5:   0.558 (1024px) / 0.546 (640px)
 mAP@50-95: 0.265 (1024px) / 0.256 (640px)
 ```
 
+> *Sumber: [results.csv](e0_results/results.csv) | Runs: [p0b_res640_s0/results.csv](e0_results/runs/p0b_res640_s0/results.csv), [p0b_res640_s42/results.csv](e0_results/runs/p0b_res640_s42/results.csv), [p3_final_yolo11s_s0/results.csv](e0_results/runs/p3_final_yolo11s_s0/results.csv), [p3_final_yolo11s_s42/results.csv](e0_results/runs/p3_final_yolo11s_s42/results.csv)*
+
 ### 8.4 Temuan Kunci E0
 
-1. **B2/B3 confusion adalah bottleneck utama** — konsisten di semua arsitektur dan resolusi. B2→B3 confusion rate 34-35%. Ini adalah masalah **fitur visual** (gradual color/texture transition), bukan arsitektur atau resolusi.
+1. **B2/B3 confusion adalah bottleneck utama** — konsisten di semua arsitektur dan resolusi. B2→B3 confusion rate 34-35%. Kedua kelas merupakan tandan hitam yang hanya dibedakan oleh ukuran, bukan arsitektur atau resolusi.
 
 2. **Arsitektur memiliki dampak terbatas** — perbedaan antara arsitektur terbaik (YOLO11s, 0.546) dan terburuk (YOLOv10n, 0.491) adalah ~5.5%. Top-4 arsitektur hanya berbeda ~0.6%. Semua gagal pada B2/B3.
 
@@ -676,11 +714,13 @@ mAP@50-95: 0.265 (1024px) / 0.256 (640px)
 
 4. **Data sudah cukup** — learning curve menunjukkan near-plateau. Gain dari 75%→100% hanya +0.9%.
 
-5. **B4 detection sangat rendah** — 41-43% objek B4 tidak terdeteksi (classified as background). Kombinasi ukuran kecil dan class imbalance.
+5. **B4 detection sangat rendah** — 41-43% objek B4 tidak terdeteksi (classified as background). B4 adalah kelas paling kecil dan paling muda — kombinasi ukuran kecil, warna hitam, dan class imbalance.
 
 6. **3 dari 4 kelas gagal mencapai target** — hanya B1 (0.831) yang mencapai target ≥70%. B2 (0.425), B3 (0.587), dan B4 (0.388) semuanya di bawah target.
 
 ---
+
+> *Sumber: [results.csv](e0_results/results.csv) | Plots: [p0b_resolution_comparison.png](e0_results/plots/p0b_resolution_comparison.png), [p0c_learning_curves.png](e0_results/plots/p0c_learning_curves.png), [p1b_architecture_sweep.png](e0_results/plots/p1b_architecture_sweep.png) | Confusion: [cm_p1b_yolo11s_s42.npy](e0_results/plots/cm_p1b_yolo11s_s42.npy), [cm_p3_final_yolo11s_s42.npy](e0_results/plots/cm_p3_final_yolo11s_s42.npy)*
 
 ## 9. Rekomendasi Langkah Selanjutnya
 
@@ -690,7 +730,7 @@ Skenario 5 (Insufficient) mensyaratkan investigasi fundamental sebelum melanjutk
 
 - **Review kualitas label** khususnya pada boundary B2/B3 — jika >10% label errors, re-label dataset
 - **Evaluasi definisi kelas** — apakah definisi B2 vs B3 cukup jelas untuk konsistensi labeling?
-- **Pertimbangkan merge B2+B3** menjadi satu kelas jika diskriminasi terbukti tidak feasible secara visual
+- **Pertimbangkan merge B2+B3** menjadi satu kelas jika diskriminasi terbukti tidak feasible — keduanya tandan hitam dengan ukuran yang tumpang tindih
 
 ### 9.2 Fase E0 yang Belum Dilaksanakan
 
@@ -711,7 +751,7 @@ Jika kualitas data sudah dikonfirmasi baik:
 | **E1** | Size Features — injeksi ukuran bbox sebagai sinyal auxiliary | B2/B3 overlap dalam ukuran tapi ada distribusi berbeda di tail |
 | **E2** | Position Features — posisi spasial dalam gambar | Posisi tandan mungkin berkorelasi dengan kematangan |
 | **E3** | Size + Position Combined | Gabungan kedua fitur sebagai sinyal lebih kuat |
-| **E4** | Texture Features — perbedaan tekstur antar stage | Warna/tekstur fruitlet adalah pembeda primer B2/B3 di lapangan |
+| **E4** | Texture Features — perbedaan tekstur antar stage | B2/B3 keduanya hitam — ukuran merupakan pembeda utama (overlap 84%), perbedaan tekstur halus dapat menjadi sinyal tambahan |
 | **E5** | Attention Mechanisms | Handling oklusi yang sering terjadi |
 | **E6** | Environmental Robustness | Variasi pencahayaan dan cuaca |
 
@@ -746,7 +786,7 @@ erasing: 0.4
 
 ### B. Ledger Metrik E0
 
-Seluruh metrik tersedia di `e0_results/results.csv` — berisi 27 baris dengan kolom:
+Seluruh metrik tersedia di [e0_results/results.csv](e0_results/results.csv) — berisi 27 baris dengan kolom:
 `run_id, phase, model, imgsz, seed, batch, lr0, aug, data_fraction, epochs_completed, map50, map50_95, map75, precision, recall, map50_B1, map50_B2, map50_B3, map50_B4, ...per-class metrics..., b2_b3_confusion, b3_b4_confusion, b4_precision, b4_recall, time_minutes, vram_gb, status`
 
 ### C. Struktur Direktori Hasil E0
@@ -772,8 +812,8 @@ e0_results/
 
 ### D. Referensi Protokol
 
-- `E0_Baseline_Experimental_Protocol.md` — Protokol lengkap E0
-- `E0_Protocol_Flowchart.html` — Flowchart interaktif fase E0
+- [E0_Baseline_Experimental_Protocol.md](E0_Baseline_Experimental_Protocol.md) — Protokol lengkap E0
+- [E0_Protocol_Flowchart.html](E0_Protocol_Flowchart.html) — Flowchart interaktif fase E0
 
 ---
 
