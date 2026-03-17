@@ -2,8 +2,10 @@
 
 **Tanggal laporan:** 17 Maret 2026
 **Decision metric:** `val_mAP50-95`
-**Best result:** 0.269424 (YOLO11l, 80 epochs, train+test combined)
-**Total eksperimen:** 47 run (10 keep, 34 discard, 2 crash, 1 running)
+**Best result:** 0.269424 ([results.tsv](results.tsv), [experiments/summary.md](experiments/summary.md)) (YOLO11l, 80 epochs, train+test combined)
+**Total eksperimen:** 47 run ([results.tsv](results.tsv)) (10 keep, 34 discard, 2 crash, 1 running)
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [ringkasan eksperimen aktif](experiments/summary.md) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
 
 ---
 
@@ -21,6 +23,8 @@ Proyek ini bertujuan membangun sistem deteksi dan klasifikasi otomatis **Tandan 
 | **B4** | Mentah / tidak matang (terkecil) | ~19% |
 
 Metrik keputusan adalah **val_mAP50-95** (mean Average Precision pada 10 IoU threshold dari 0.50 hingga 0.95 dengan step 0.05), yang mengukur akurasi deteksi dan klasifikasi secara bersamaan.
+
+> *Sumber: [laporan restratifikasi dataset](Dataset-YOLO/stratifikasi.md) | [konfigurasi dataset YOLO](Dataset-YOLO/data.yaml) | [decision-metric konteks riset](context.md)*
 
 ### 1.2 Dataset
 
@@ -43,6 +47,8 @@ Metrik keputusan adalah **val_mAP50-95** (mean Average Precision pada 10 IoU thr
 
 **Distribusi kelas (setelah re-stratifikasi):** B1 ~12%, B2 ~23%, B3 ~46%, B4 ~19%. Kelas B3 mendominasi hampir setengah dataset, sedangkan B1 merupakan minoritas.
 
+> *Sumber: [laporan restratifikasi dataset](Dataset-YOLO/stratifikasi.md) | [konfigurasi dataset YOLO](Dataset-YOLO/data.yaml) | [ringkasan bottleneck dataset](Dataset-YOLO/result.md)*
+
 ### 1.3 Sampel Dataset
 
 <table>
@@ -64,6 +70,8 @@ Karakteristik visual:
 </tr>
 </table>
 
+> *Sumber: [contact sheet dataset](analysis_contact_sheet.png) | [laporan restratifikasi dataset](Dataset-YOLO/stratifikasi.md) | [konfigurasi dataset YOLO](Dataset-YOLO/data.yaml)*
+
 ---
 
 ## 2. Hipotesis Utama yang Diuji
@@ -82,6 +90,8 @@ Selama 47 eksperimen, hipotesis-hipotesis berikut diuji secara sistematis menggu
 | RT-DETR (transformer) untuk konteks global | #13 | **GAGAL** — tidak konvergen (0.138) |
 | RF-DETR + DINOv2 backbone | #25, #26 | **GAGAL** — 0.258, di bawah baseline |
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [log run gabungan](logs/all_runs.log)*
+
 ### 2.2 Data-Centric
 
 | Hipotesis | Eksperimen | Hasil |
@@ -90,6 +100,8 @@ Selama 47 eksperimen, hipotesis-hipotesis berikut diuji secara sistematis menggu
 | Train+test combined (+22% data) | #27 | **GAGAL** pada 1024px (0.248), **BERHASIL** pada 640px (#31, 0.267) |
 | Tiled dataset untuk small object | #22 | **GAGAL** — konteks hilang (0.239) |
 | Label noise correction via model prediction | Investigasi | **DIBATALKAN** — model tidak cukup confident |
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [ringkasan bottleneck dataset](Dataset-YOLO/result.md)*
 
 ### 2.3 Augmentasi & Hyperparameter
 
@@ -115,6 +127,8 @@ Selama 47 eksperimen, hipotesis-hipotesis berikut diuji secara sistematis menggu
 | Model soup (3-seed averaging) | #20 | **GAGAL** — tidak ada improvement |
 | Long training (2h, 300 ep) | #41–42 | **GAGAL** — val drift ke bawah (0.258) |
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [log run gabungan](logs/all_runs.log)*
+
 ### 2.4 Two-Stage Pipeline (Detector + Classifier)
 
 | Hipotesis | Eksperimen | Hasil |
@@ -123,6 +137,8 @@ Selama 47 eksperimen, hipotesis-hipotesis berikut diuji secara sistematis menggu
 | Stage1 + DINOv2 frozen classifier | #43 | **GAGAL** — pipeline 0.181 (DINOv2 val_acc=59.15%) |
 | DINOv2 + CORN ordinal loss | Exp 17 | **GAGAL** — B2 collapse ke 34.6% |
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log two-stage EfficientNet](logs/two_stage_run.log) | [log two-stage DINOv2](logs/two_stage_dinov2_run.log)*
+
 ### 2.5 Hierarchical Classification (Coarse + Binary)
 
 | Hipotesis | Eksperimen | Hasil |
@@ -130,17 +146,23 @@ Selama 47 eksperimen, hipotesis-hipotesis berikut diuji secara sistematis menggu
 | Coarse B1/B23/B4 + binary B2/B3 (narrow crops) | #44 | **GAGAL** — pipeline 0.178 (B4 leakage 35%) |
 | Wide-context crops PAD=0.6 | #47 | **GAGAL** — gate failed (71.9% < 75% target) |
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log coarse classifier narrow-crop](logs/hier_coarse3_run.log) | [log coarse classifier wide-crop](logs/coarse_wide_run.log)*
+
 ### 2.6 Contrastive Learning
 
 | Hipotesis | Eksperimen | Hasil |
 |-----------|-----------|-------|
 | SupCon B2/B3 binary specialist | #45 | **GAGAL** — 73.07% vs CE 72.81% (negligible) |
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log SupCon B2/B3](logs/supcon_b23_run.log) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
+
 ### 2.7 Color Analysis
 
 | Hipotesis | Eksperimen | Hasil |
 |-----------|-----------|-------|
 | HSV color cukup untuk klasifikasi kematangan | Investigasi | **GAGAL** — akurasi 31.6% vs EfficientNet 62.7% |
+
+> *Sumber: [laporan analisis warna](archive/research/archive/color_analysis_report.md) | [log analisis warna mentah](logs/color_analysis_raw.log) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
 
 ---
 
@@ -198,6 +220,8 @@ Selama 47 eksperimen, hipotesis-hipotesis berikut diuji secara sistematis menggu
 | 46 | yolo11s label_smooth=0.1 | YOLO11s | 0.547 | 0.255 | discard | Model kecil + smoothing tidak cukup |
 | 47 | Wide-context hier PAD=0.6 | DINOv2 | 0.000 | 0.000 | discard | Gate FAILED: 71.90% < 75% target |
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log run gabungan](logs/all_runs.log) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
+
 ### 3.2 Progress Chart
 
 <table>
@@ -220,6 +244,8 @@ Pola kunci:
 </tr>
 </table>
 
+> *Sumber: [progress chart](progress.png) | [rekap eksperimen utama](results.tsv) | [rangkuman progres eksperimen](archive/research/archive/rangkuman-progress.md)*
+
 ### 3.3 Statistik Keputusan
 
 | Status | Jumlah | Persentase |
@@ -239,6 +265,8 @@ Dari 10 eksperimen "keep", trajektori improvement:
 
 **Total improvement dari baseline ke best:** +0.014 mAP50-95 (~5.5% relatif) dalam 47 eksperimen.
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [ringkasan eksperimen aktif](experiments/summary.md) | [state eksperimen](experiments/state.json)*
+
 ---
 
 ## 4. Analisis Per-Kelas
@@ -253,6 +281,8 @@ Data dari eksperimen imgsz=1024 batch=8 (per-class paling lengkap terdokumentasi
 | **B2** | ~0.38 | **0.197** | rendah | rendah | **Bottleneck utama** — confusion dengan B3 |
 | **B3** | ~0.60 | **0.264** | moderat | moderat | Kelas terbesar, performa sedang |
 | **B4** | ~0.40 | **0.140** | rendah | rendah | Buah terkecil (mentah), small object problem |
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [log run gabungan](logs/all_runs.log)*
 
 ### 4.2 Evolusi B2 mAP50-95 Lintas Arsitektur
 
@@ -270,6 +300,8 @@ Data dari eksperimen imgsz=1024 batch=8 (per-class paling lengkap terdokumentasi
 
 **Temuan kritis:** B2 mAP50-95 ≈ 0.197 **konsisten lintas semua arsitektur** (YOLOv9c, YOLO11m, RT-DETR, RF-DETR). Nilai ini menunjukkan **ceiling yang diimpose oleh data/label**, bukan pilihan model.
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [log RF-DETR base](logs/rfdetr_run.log) | [log RF-DETR small](logs/rfdetr_small_run.log)*
+
 ### 4.3 Bottleneck Hierarki
 
 ```
@@ -286,6 +318,8 @@ Data dari eksperimen imgsz=1024 batch=8 (per-class paling lengkap terdokumentasi
           └───────┘   └───────┘  └───────┘  └───────┘
 ```
 
+> *Sumber: [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [log coarse classifier narrow-crop](logs/hier_coarse3_run.log) | [log two-stage DINOv2](logs/two_stage_dinov2_run.log)*
+
 ---
 
 ## 5. Analisis Bottleneck
@@ -293,40 +327,48 @@ Data dari eksperimen imgsz=1024 batch=8 (per-class paling lengkap terdokumentasi
 ### 5.1 Bottleneck #1: Confusion B2/B3 (Utama)
 
 **Bukti:**
-- B2 mAP50-95 ≈ 0.197 **konsisten di semua arsitektur**
-- EfficientNet classifier pada crop: B2 accuracy = 46.6% (hampir acak untuk binary)
-- DINOv2 classifier: B2 accuracy = 45.9% (tidak lebih baik)
-- SupCon contrastive: B2 accuracy = 58.7% (marginal improvement)
-- Binary B2/B3 specialist: oscillasi antara B2 dan B3 setiap epoch
+- B2 mAP50-95 ≈ 0.197 **konsisten di semua arsitektur** ([results.tsv](results.tsv), [archive/research/RESEARCH_MASTER.md](archive/research/RESEARCH_MASTER.md))
+- EfficientNet classifier pada crop: B2 accuracy = 46.6% ([logs/classifier_run.log](logs/classifier_run.log)) (hampir acak untuk binary)
+- DINOv2 classifier: B2 accuracy = 45.9% ([logs/dinov2_run.log](logs/dinov2_run.log)) (tidak lebih baik)
+- SupCon contrastive: B2 accuracy = 58.7% ([logs/supcon_b23_run.log](logs/supcon_b23_run.log)) (marginal improvement)
+- Binary B2/B3 specialist: oscillasi antara B2 dan B3 setiap epoch ([logs/supcon_b23_run.log](logs/supcon_b23_run.log))
 
-**Akar masalah:** B2 dan B3 memiliki **ambiguitas visual fundamental**. Bahkan dengan crop terisolasi dan classifier dedicated yang dilatih khusus pada GT crops, akurasi B2 hanya ~47% — level coin-flip. Ini menunjukkan:
+**Akar masalah:** B2 dan B3 memiliki **ambiguitas visual fundamental**. Bahkan dengan crop terisolasi dan classifier dedicated yang dilatih khusus pada GT crops, akurasi B2 hanya ~47% ([logs/classifier_run.log](logs/classifier_run.log), [logs/dinov2_run.log](logs/dinov2_run.log)) — level coin-flip. Ini menunjukkan:
 1. **Bukan masalah arsitektur** — semua model gagal di B2
-2. **Bukan masalah warna** — HSV classifier hanya 31.6% akurasi
+2. **Bukan masalah warna** — HSV classifier hanya 31.6% akurasi ([archive/research/archive/color_analysis_report.md](archive/research/archive/color_analysis_report.md), [logs/color_analysis_raw.log](logs/color_analysis_raw.log))
 3. **Kemungkinan label noise** — annotator sendiri tidak konsisten membedakan B2/B3 pada kasus borderline
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log classifier EfficientNet](logs/classifier_run.log) | [log classifier DINOv2](logs/dinov2_run.log) | [log SupCon B2/B3](logs/supcon_b23_run.log)*
 
 ### 5.2 Bottleneck #2: B4 — Buah Mentah Berukuran Kecil
 
 **Bukti:**
-- B4 mAP50-95 = 0.140 (terburuk)
-- B4 adalah kelas buah mentah/tidak matang dengan bounding box rata-rata terkecil
-- Tiled training (menaikkan resolusi efektif) justru menurunkan performa karena menghilangkan konteks
-- imgsz=1024 tidak signifikan membantu B4
+- B4 mAP50-95 = 0.140 ([results.tsv](results.tsv)) (terburuk)
+- B4 adalah kelas buah mentah/tidak matang dengan bounding box rata-rata terkecil ([Dataset-YOLO/result.md](Dataset-YOLO/result.md))
+- Tiled training (menaikkan resolusi efektif) justru menurunkan performa karena menghilangkan konteks ([results.tsv](results.tsv), [archive/research/RESEARCH_MASTER.md](archive/research/RESEARCH_MASTER.md))
+- imgsz=1024 tidak signifikan membantu B4 ([results.tsv](results.tsv))
 
 **Akar masalah:** B4 (buah mentah/tidak matang) memiliki ukuran kecil yang membuat lokalisasi presisi sulit. Pada IoU ketat (0.75–0.95), sedikit error bounding box langsung menurunkan mAP. SAHI (sliced inference) pernah dicoba dan justru memperburuk — karena B4 juga bergantung pada konteks spasial.
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [ringkasan bottleneck dataset](Dataset-YOLO/result.md) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
 
 ### 5.3 Bottleneck #3: Domain Shift DAMIMAS vs LONSUM
 
 **Bukti:**
-- DAMIMAS mendominasi ~90% data, LONSUM hanya ~10%
-- Kedua koleksi memiliki distribusi kelas dan struktur scene yang berbeda
-- Satu recipe global menghasilkan kompromi — optimal untuk DAMIMAS tapi suboptimal untuk LONSUM
+- DAMIMAS mendominasi ~90% data, LONSUM hanya ~10% ([Dataset-YOLO/stratifikasi.md](Dataset-YOLO/stratifikasi.md), [Dataset-YOLO/result.md](Dataset-YOLO/result.md))
+- Kedua koleksi memiliki distribusi kelas dan struktur scene yang berbeda ([Dataset-YOLO/result.md](Dataset-YOLO/result.md))
+- Satu recipe global menghasilkan kompromi — optimal untuk DAMIMAS tapi suboptimal untuk LONSUM ([archive/research/RESEARCH_MASTER.md](archive/research/RESEARCH_MASTER.md))
+
+> *Sumber: [laporan restratifikasi dataset](Dataset-YOLO/stratifikasi.md) | [ringkasan bottleneck dataset](Dataset-YOLO/result.md) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
 
 ### 5.4 Bottleneck #4: Konflik Konteks Spasial vs Detail Lokal
 
 **Bukti:**
-- Dataset memiliki stratifikasi vertikal konsisten antar kelas — posisi objek berperan dalam separasi kelas
-- Tiled/crop approach membantu detail lokal tapi menghilangkan sinyal konteks penting
-- Wide-context crops (PAD=0.6) justru menambah noise visual, bukan sinyal diskriminatif
+- Dataset memiliki stratifikasi vertikal konsisten antar kelas — posisi objek berperan dalam separasi kelas ([Dataset-YOLO/result.md](Dataset-YOLO/result.md))
+- Tiled/crop approach membantu detail lokal tapi menghilangkan sinyal konteks penting ([results.tsv](results.tsv), [archive/research/RESEARCH_MASTER.md](archive/research/RESEARCH_MASTER.md))
+- Wide-context crops (PAD=0.6) justru menambah noise visual, bukan sinyal diskriminatif ([logs/coarse_wide_run.log](logs/coarse_wide_run.log), [results.tsv](results.tsv))
+
+> *Sumber: [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [rekap eksperimen utama](results.tsv) | [log coarse classifier wide-crop](logs/coarse_wide_run.log)*
 
 ### 5.5 Bottleneck #5: Color Bukan Sinyal Diskriminatif
 
@@ -361,6 +403,8 @@ Kesimpulan: Warna **konsisten** dengan urutan kematangan, tetapi **tidak cukup d
 </td>
 </tr>
 </table>
+
+> *Sumber: [laporan analisis warna](archive/research/archive/color_analysis_report.md) | [log analisis warna mentah](logs/color_analysis_raw.log) | [log classifier EfficientNet](logs/classifier_run.log)*
 
 ---
 
@@ -400,6 +444,8 @@ Kesimpulan: Warna **konsisten** dengan urutan kematangan, tetapi **tidak cukup d
 </tr>
 </table>
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log RF-DETR base](logs/rfdetr_run.log) | [log RF-DETR small](logs/rfdetr_small_run.log) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
+
 ### 6.2 One-Stage vs Two-Stage
 
 <table>
@@ -408,7 +454,7 @@ Kesimpulan: Warna **konsisten** dengan urutan kematangan, tetapi **tidak cukup d
 
 **One-Stage (End-to-End YOLO)**
 
-- Best: **0.269424** (YOLO11l)
+- Best: **0.269424** ([results.tsv](results.tsv), [experiments/summary.md](experiments/summary.md)) (YOLO11l)
 - Pro: Simple, tidak ada compound error
 - Con: B2/B3 harus diputuskan bersamaan dengan deteksi
 - Status: **Arsitektur terpilih**
@@ -418,11 +464,11 @@ Kesimpulan: Warna **konsisten** dengan urutan kematangan, tetapi **tidak cukup d
 
 **Two-Stage (Detector + Classifier)**
 
-- Best: **0.181** (DINOv2 classifier)
-- Single-class detector: 0.390 (sangat kuat)
-- Classifier bottleneck: B2 ≈ 46–59% accuracy
-- Compound error: 90% × 75% × 60% = hanya ~40% sinyal tersisa
-- Status: **DITUTUP** — semua variasi gagal
+- Best: **0.181** ([logs/two_stage_dinov2_run.log](logs/two_stage_dinov2_run.log), [results.tsv](results.tsv)) (DINOv2 classifier)
+- Single-class detector: 0.390 ([logs/two_stage_run.log](logs/two_stage_run.log), [results.tsv](results.tsv)) (sangat kuat)
+- Classifier bottleneck: B2 ≈ 46–59% accuracy ([logs/classifier_run.log](logs/classifier_run.log), [logs/dinov2_run.log](logs/dinov2_run.log), [logs/supcon_b23_run.log](logs/supcon_b23_run.log))
+- Compound error: 90% × 75% × 60% = hanya ~40% sinyal tersisa ([archive/research/archive/two_stage_debug_report.md](archive/research/archive/two_stage_debug_report.md), [logs/classifier_run.log](logs/classifier_run.log))
+- Status: **DITUTUP** — semua variasi gagal ([results.tsv](results.tsv))
 
 | Classifier | Val Acc | B2 Acc |
 |-----------|-------:|------:|
@@ -437,6 +483,8 @@ Kesimpulan: Warna **konsisten** dengan urutan kematangan, tetapi **tidak cukup d
 </tr>
 </table>
 
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log two-stage EfficientNet](logs/two_stage_run.log) | [laporan debug evaluator two-stage](archive/research/archive/two_stage_debug_report.md) | [log classifier DINOv2](logs/dinov2_run.log)*
+
 ---
 
 ## 7. Cabang Penelitian yang Ditutup
@@ -445,22 +493,26 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
 
 ### 7.1 Ditutup Definitif
 
-1. **Long brute-force one-stage training** — 2h / 300 epochs tidak membantu; val drift turun setelah peak awal (exp #41–42)
-2. **Crop-only two-stage pipelines** — semua classifier (EfficientNet, DINOv2 CE, DINOv2 CORN, SupCon) gagal pada B2 (exp #24, #40, #43, #44, #45)
-3. **Tiled training** — menghilangkan konteks spasial yang krusial (exp #22)
-4. **Label smoothing sebagai standalone fix** — tidak cukup kompensasi tanpa model capacity (exp #46)
-5. **Small knob-turning** — loss weights, augmentasi tunggal, seed changes sudah saturasi (exp #8, #10, #14–18, #36–39)
-6. **Class-balanced oversampling** — duplikasi + flip bukan augmentasi bermakna (exp #11)
-7. **Model soup / weight averaging** — tidak ada improvement (exp #20)
-8. **Wide-context crops** — menambah noise, bukan sinyal (exp #47)
-9. **Hierarchical classification** — B4 leakage 35% ke branch B23 tidak bisa diperbaiki (exp #44)
-10. **Contrastive learning untuk B2/B3** — SupCon hanya +0.26% vs plain CE (exp #45)
-11. **Color-based classification** — HSV bukan diskriminatif untuk kematangan TBS (investigasi warna)
+1. **Long brute-force one-stage training** — 2h / 300 epochs tidak membantu; val drift turun setelah peak awal ([results.tsv](results.tsv), [logs/all_runs.log](logs/all_runs.log)) (exp #41–42)
+2. **Crop-only two-stage pipelines** — semua classifier (EfficientNet, DINOv2 CE, DINOv2 CORN, SupCon) gagal pada B2 ([results.tsv](results.tsv), [logs/two_stage_run.log](logs/two_stage_run.log), [logs/two_stage_dinov2_run.log](logs/two_stage_dinov2_run.log), [logs/supcon_b23_run.log](logs/supcon_b23_run.log)) (exp #24, #40, #43, #44, #45)
+3. **Tiled training** — menghilangkan konteks spasial yang krusial ([results.tsv](results.tsv), [Dataset-YOLO/result.md](Dataset-YOLO/result.md)) (exp #22)
+4. **Label smoothing sebagai standalone fix** — tidak cukup kompensasi tanpa model capacity ([results.tsv](results.tsv)) (exp #46)
+5. **Small knob-turning** — loss weights, augmentasi tunggal, seed changes sudah saturasi ([results.tsv](results.tsv)) (exp #8, #10, #14–18, #36–39)
+6. **Class-balanced oversampling** — duplikasi + flip bukan augmentasi bermakna ([results.tsv](results.tsv), [archive/research/RESEARCH_MASTER.md](archive/research/RESEARCH_MASTER.md)) (exp #11)
+7. **Model soup / weight averaging** — tidak ada improvement ([results.tsv](results.tsv), [logs/all_runs.log](logs/all_runs.log)) (exp #20)
+8. **Wide-context crops** — menambah noise, bukan sinyal ([results.tsv](results.tsv), [logs/coarse_wide_run.log](logs/coarse_wide_run.log)) (exp #47)
+9. **Hierarchical classification** — B4 leakage 35% ke branch B23 tidak bisa diperbaiki ([results.tsv](results.tsv), [logs/hier_coarse3_run.log](logs/hier_coarse3_run.log)) (exp #44)
+10. **Contrastive learning untuk B2/B3** — SupCon hanya +0.26% vs plain CE ([logs/supcon_b23_run.log](logs/supcon_b23_run.log)) (exp #45)
+11. **Color-based classification** — HSV bukan diskriminatif untuk kematangan TBS ([archive/research/archive/color_analysis_report.md](archive/research/archive/color_analysis_report.md), [logs/color_analysis_raw.log](logs/color_analysis_raw.log)) (investigasi warna)
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [log run gabungan](logs/all_runs.log)*
 
 ### 7.2 Belum Ditutup Tapi Diminishing Returns
 
-1. **RF-DETR** — satu eksperimen masih running (#26), tapi hasil base model (0.258) tidak menjanjikan
+1. **RF-DETR** — satu eksperimen masih running (#26), tapi hasil base model (0.258) tidak menjanjikan ([results.tsv](results.tsv), [logs/rfdetr_run.log](logs/rfdetr_run.log), [logs/rfdetr_small_run.log](logs/rfdetr_small_run.log))
 2. **Label smoothing pada model besar** — belum diuji pada YOLO11l (hanya pada yolo11s), tapi diperkirakan marginal
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [log RF-DETR small](logs/rfdetr_small_run.log) | [ringkasan eksperimen aktif](experiments/summary.md)*
 
 ---
 
@@ -468,7 +520,7 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
 
 ### 8.1 Kesimpulan Utama
 
-1. **Model YOLO mampu belajar** — mAP50 = 0.554 menunjukkan deteksi objek berfungsi baik. Masalahnya bukan "model gagal total" tetapi "model mentok pada bottleneck struktural".
+1. **Model YOLO mampu belajar** — mAP50 = 0.554 ([results.tsv](results.tsv)) menunjukkan deteksi objek berfungsi baik. Masalahnya bukan "model gagal total" tetapi "model mentok pada bottleneck struktural".
 
 2. **Konfigurasi terbaik yang ditemukan:**
    - Model: **YOLO11l**
@@ -477,15 +529,17 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
    - Optimizer: **AdamW** dengan cosine LR
    - Epochs: **80** (diminishing returns setelah 60)
    - Dataset: **train+test combined** (3,388 gambar)
-   - Hasil: **val_mAP50-95 = 0.269424**
+   - Hasil: **val_mAP50-95 = 0.269424** ([results.tsv](results.tsv), [experiments/summary.md](experiments/summary.md))
 
-3. **Bottleneck utama adalah B2/B3 confusion** — bukan masalah arsitektur, resolusi, augmentasi, atau warna. Ini adalah **ambiguitas visual fundamental** yang kemungkinan diperparah oleh **label noise** dari annotator.
+3. **Bottleneck utama adalah B2/B3 confusion** — bukan masalah arsitektur, resolusi, augmentasi, atau warna ([results.tsv](results.tsv), [logs/classifier_run.log](logs/classifier_run.log), [logs/dinov2_run.log](logs/dinov2_run.log)). Ini adalah **ambiguitas visual fundamental** yang kemungkinan diperparah oleh **label noise** dari annotator.
 
-4. **B4 (buah mentah terkecil) adalah bottleneck sekunder** — mAP50-95 = 0.140, sulit diperbaiki tanpa mengorbankan konteks spasial.
+4. **B4 (buah mentah terkecil) adalah bottleneck sekunder** — mAP50-95 = 0.140 ([results.tsv](results.tsv), [Dataset-YOLO/result.md](Dataset-YOLO/result.md)), sulit diperbaiki tanpa mengorbankan konteks spasial.
 
-5. **Single-class detection sangat kuat** (mAP50-95 = 0.390) — ini menunjukkan bahwa lokalisasi bukan masalah utama; klasifikasi 4 kelas yang membatasi performa.
+5. **Single-class detection sangat kuat** (mAP50-95 = 0.390) ([results.tsv](results.tsv), [logs/two_stage_run.log](logs/two_stage_run.log)) — ini menunjukkan bahwa lokalisasi bukan masalah utama; klasifikasi 4 kelas yang membatasi performa.
 
-6. **Recipe tuning sudah mendekati limit** — 47 eksperimen dengan berbagai arsitektur, augmentasi, dan pipeline semuanya berkumpul di zona 0.25–0.27.
+6. **Recipe tuning sudah mendekati limit** — 47 eksperimen ([results.tsv](results.tsv)) dengan berbagai arsitektur, augmentasi, dan pipeline semuanya berkumpul di zona 0.25–0.27 ([results.tsv](results.tsv), [progress.png](progress.png)).
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [ringkasan eksperimen aktif](experiments/summary.md) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
 
 ### 8.2 Rekomendasi
 
@@ -508,6 +562,8 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
 - Reformulasi task menjadi **3 kelas** (B1, B2+B3 gabung, B4) — jika B2/B3 memang tidak bisa dibedakan secara visual oleh annotator manusia, memaksakan 4 kelas hanya menambah noise
 - Inter-rater agreement study — ukur apakah annotator manusia sendiri konsisten membedakan B2 vs B3
 
+> *Sumber: [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md) | [rekap eksperimen utama](results.tsv) | [ringkasan bottleneck dataset](Dataset-YOLO/result.md)*
+
 ---
 
 ## Lampiran
@@ -516,14 +572,18 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
 
 | File | Deskripsi |
 |------|-----------|
-| `results.tsv` | Data metrik semua eksperimen (source of truth) |
-| `progress.png` | Progress chart Karpathy-style |
-| `analysis_contact_sheet.png` | Contact sheet sampel dataset |
-| `archive/research/RESEARCH_MASTER.md` | Jurnal eksperimen detail |
-| `archive/research/archive/color_analysis_report.md` | Analisis warna HSV |
-| `Dataset-YOLO/result.md` | Ringkasan bottleneck |
-| `Dataset-YOLO/stratifikasi.md` | Laporan re-stratifikasi dataset |
-| `program.md` | Aturan operasional autoresearch |
+| [results.tsv](results.tsv) | Data metrik semua eksperimen (source of truth) |
+| [progress.png](progress.png) | Progress chart Karpathy-style |
+| [analysis_contact_sheet.png](analysis_contact_sheet.png) | Contact sheet sampel dataset |
+| [archive/research/RESEARCH_MASTER.md](archive/research/RESEARCH_MASTER.md) | Jurnal eksperimen detail |
+| [archive/research/archive/color_analysis_report.md](archive/research/archive/color_analysis_report.md) | Analisis warna HSV |
+| [archive/research/archive/two_stage_debug_report.md](archive/research/archive/two_stage_debug_report.md) | Audit evaluator two-stage |
+| [Dataset-YOLO/result.md](Dataset-YOLO/result.md) | Ringkasan bottleneck |
+| [Dataset-YOLO/stratifikasi.md](Dataset-YOLO/stratifikasi.md) | Laporan re-stratifikasi dataset |
+| [Dataset-YOLO/data.yaml](Dataset-YOLO/data.yaml) | Konfigurasi dataset YOLO yang dipakai |
+| [program.md](program.md) | Aturan operasional autoresearch |
+
+> *Sumber: [rekap eksperimen utama](results.tsv) | [indeks log penelitian](logs/README.md) | [jurnal eksperimen terintegrasi](archive/research/RESEARCH_MASTER.md)*
 
 ### B. Glosarium
 
