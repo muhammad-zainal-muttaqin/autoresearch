@@ -1,5 +1,7 @@
 # Research Master
 
+> **Catatan koreksi (2026-03-17):** Beberapa catatan eksperimen historis dalam dokumen ini menggunakan definisi kelas B1–B4 yang **terbalik**. Definisi yang benar: **B1 = paling matang** (buah besar, warna orange), **B2 = mengkal**, **B3 = kurang matang**, **B4 = paling mentah/tidak matang** (buah terkecil). Catatan historis tidak diubah karena mencerminkan pemahaman saat eksperimen dijalankan. Lihat `LAPORAN_EKSPERIMEN.md` untuk definisi dan narasi yang sudah diperbaiki.
+
 Dokumen ini menggabungkan seluruh catatan penelitian yang sebelumnya tersebar di banyak file markdown. File-file sumber dipindahkan ke arsip agar repo inti lebih ringkas.
 
 

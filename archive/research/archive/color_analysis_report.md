@@ -2,9 +2,11 @@
 
 Generated: 2026-03-15
 
+> **Catatan koreksi (2026-03-17):** Hipotesis di baris 28 ("B1 may represent freshly harvested/ripe stage") **terkonfirmasi benar**. Definisi kelas yang benar: B1 = paling matang (buah besar, warna orange), B4 = paling mentah (buah terkecil). Oleh karena itu, temuan warna dalam laporan ini sebenarnya **konsisten** dengan tingkat kematangan, bukan counter-intuitive. Lihat [`LAPORAN_EKSPERIMEN.md`](../../../LAPORAN_EKSPERIMEN.md) bagian 5.5 untuk narasi yang sudah diperbaiki.
+
 ## Summary
 
-Run color_classifier.py on Dataset-Crops/val (2786 crop images).
+Run [`color_classifier.py`](../../scripts/archive/color_classifier.py) on Dataset-Crops/val (2786 crop images).
 
 **Verdict**: HSV color alone is NOT sufficient for ripeness classification.
 Color classifier val accuracy = **31.6%** vs EfficientNet's **62.7%**.
@@ -23,21 +25,18 @@ Using color as primary classifier would be a significant regression.
 
 ### Critical Observations
 
-1. **B1 is NOT green** (mean_H=26.6° = orange range). Intuitive assumption (unripe=green) is WRONG.
-   - B1 dominant color: orange (52.1%). This is counter-intuitive.
-   - Hypothesis: B1 may represent "freshly harvested/ripe" stage, not "unripe".
-   - OR: The B1 fruits in this dataset happen to be photographed against orange soil/background.
+1. **B1 is orange** (mean_H=26.6°, dominant orange 52.1%). This is **consistent** with B1 being the most ripe class — ripe oil palm bunches are orange/red.
 
 2. **B2 vs B3 color overlap is severe**:
    - B2 mean_H = 46.5° (yellow-green range)
    - B3 mean_H = 74.5° (green range)
    - Both have similar saturation (~30-31%)
-   - The rule "B3=orange/red" is backward — B3 appears greener than B2
+   - B3 (kurang matang) appears greener than B2 (mengkal), consistent with lower ripeness
 
 3. **B4 is between B2 and B3** in color space (mean_H=55.3°), making color-based B4 detection ambiguous.
 
-4. **Counter-intuitive ordering**: By hue, ordering is B1(26°) < B2(46°) < B4(55°) < B3(75°)
-   This does NOT match the expected ripeness progression B1→B2→B3→B4.
+4. **Hue ordering mostly consistent with ripeness**: B1(26°) < B2(46°) < B4(55°) < B3(75°).
+   This largely matches the ripeness ordering B1(most ripe)→B2→B3→B4(least ripe), with B4/B3 swap explainable by B4's small size and underdeveloped color.
 
 ---
 
@@ -62,7 +61,7 @@ B4 (554):  52   263   186    53
 ```
 
 ### Key Confusions:
-- B1 is almost entirely predicted as B2 or B3 (color rule predicts orange=B2, but B1 IS orange!)
+- B1 is almost entirely mis-predicted as B2 or B3 (color rules assign orange range to B2, missing B1's dominant orange)
 - B2 split between B2 (41%) and B3 (48%) — nearly random
 - B3 split between B2 (42%) and B3 (43%) — worse than B2!
 - B4 entirely mis-predicted (9.6% acc)

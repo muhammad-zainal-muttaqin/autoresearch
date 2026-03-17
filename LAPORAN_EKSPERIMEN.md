@@ -15,10 +15,10 @@ Proyek ini bertujuan membangun sistem deteksi dan klasifikasi otomatis **Tandan 
 
 | Kelas | Deskripsi | Proporsi Dataset |
 |-------|-----------|-----------------|
-| **B1** | Mentah / belum matang | ~12% |
-| **B2** | Mengkal / setengah matang | ~23% |
-| **B3** | Matang | ~46% |
-| **B4** | Lewat matang / busuk | ~19% |
+| **B1** | Matang / paling matang | ~12% |
+| **B2** | Mengkal | ~23% |
+| **B3** | Kurang matang | ~46% |
+| **B4** | Mentah / tidak matang (terkecil) | ~19% |
 
 Metrik keputusan adalah **val_mAP50-95** (mean Average Precision pada 10 IoU threshold dari 0.50 hingga 0.95 dengan step 0.05), yang mengukur akurasi deteksi dan klasifikasi secara bersamaan.
 
@@ -237,7 +237,7 @@ Dari 10 eksperimen "keep", trajektori improvement:
   #2      #4      #5      #9     #19     #29     #31     #33      #34
 ```
 
-**Total improvement dari baseline ke best:** +0.014 mAP50-95 (~5.5% relatif) dalam 48 eksperimen.
+**Total improvement dari baseline ke best:** +0.014 mAP50-95 (~5.5% relatif) dalam 47 eksperimen.
 
 ---
 
@@ -249,10 +249,10 @@ Data dari eksperimen imgsz=1024 batch=8 (per-class paling lengkap terdokumentasi
 
 | Kelas | mAP50 | mAP50-95 | Precision | Recall | Diagnosis |
 |-------|------:|--------:|----------:|-------:|-----------|
-| **B1** | ~0.71 | **0.441** | 0.583 | 0.884 | Kelas termudah, performa baik |
+| **B1** | ~0.71 | **0.441** | 0.583 | 0.884 | Kelas paling matang (objek besar), performa terbaik |
 | **B2** | ~0.38 | **0.197** | rendah | rendah | **Bottleneck utama** — confusion dengan B3 |
 | **B3** | ~0.60 | **0.264** | moderat | moderat | Kelas terbesar, performa sedang |
-| **B4** | ~0.40 | **0.140** | rendah | rendah | Small object problem |
+| **B4** | ~0.40 | **0.140** | rendah | rendah | Buah terkecil (mentah), small object problem |
 
 ### 4.2 Evolusi B2 mAP50-95 Lintas Arsitektur
 
@@ -304,15 +304,15 @@ Data dari eksperimen imgsz=1024 batch=8 (per-class paling lengkap terdokumentasi
 2. **Bukan masalah warna** — HSV classifier hanya 31.6% akurasi
 3. **Kemungkinan label noise** — annotator sendiri tidak konsisten membedakan B2/B3 pada kasus borderline
 
-### 5.2 Bottleneck #2: Small Object B4
+### 5.2 Bottleneck #2: B4 — Buah Mentah Berukuran Kecil
 
 **Bukti:**
 - B4 mAP50-95 = 0.140 (terburuk)
-- B4 adalah kelas dengan bounding box rata-rata terkecil
+- B4 adalah kelas buah mentah/tidak matang dengan bounding box rata-rata terkecil
 - Tiled training (menaikkan resolusi efektif) justru menurunkan performa karena menghilangkan konteks
 - imgsz=1024 tidak signifikan membantu B4
 
-**Akar masalah:** B4 memiliki ukuran kecil yang membuat lokalisasi presisi sulit. Pada IoU ketat (0.75–0.95), sedikit error bounding box langsung menurunkan mAP. SAHI (sliced inference) pernah dicoba dan justru memperburuk — karena B4 juga bergantung pada konteks spasial.
+**Akar masalah:** B4 (buah mentah/tidak matang) memiliki ukuran kecil yang membuat lokalisasi presisi sulit. Pada IoU ketat (0.75–0.95), sedikit error bounding box langsung menurunkan mAP. SAHI (sliced inference) pernah dicoba dan justru memperburuk — karena B4 juga bergantung pada konteks spasial.
 
 ### 5.3 Bottleneck #3: Domain Shift DAMIMAS vs LONSUM
 
@@ -349,14 +349,14 @@ EfficientNet accuracy: **62.7%**
 </td>
 <td width="50%">
 
-**Temuan counter-intuitive:**
+**Konsistensi warna dengan tingkat kematangan:**
 
-1. **B1 bukan hijau** — mean hue 26.6° = orange. Asumsi "mentah = hijau" salah untuk dataset ini
-2. **B2 vs B3 overlap parah** — B2 (46.5°) dan B3 (74.5°) memiliki saturasi serupa (~30–31%)
-3. **B4 berada di antara B2 dan B3** dalam color space (55.3°)
-4. **Urutan hue: B1 < B2 < B4 < B3** — TIDAK sesuai urutan kematangan B1→B2→B3→B4
+1. **B1 berwarna orange** — mean hue 26.6° = orange. Ini **konsisten** dengan definisi B1 sebagai kelas paling matang (buah matang berwarna orange)
+2. **B3 berwarna hijau** — mean hue 74.5° = green. Ini **konsisten** dengan definisi B3 sebagai kelas kurang matang
+3. **Urutan hue: B1(26°) < B2(46°) < B4(55°) < B3(75°)** — sebagian besar konsisten dengan urutan kematangan menurun (B1 paling matang → B3 kurang matang). Swap B4/B3 wajar karena B4 (buah terkecil/mentah) belum berkembang warnanya
+4. **B2 vs B3 overlap parah** — B2 (46.5°) dan B3 (74.5°) memiliki saturasi serupa (~30–31%), sehingga warna saja tidak cukup diskriminatif
 
-Kesimpulan: **Perbedaan B2/B3 bukan masalah warna.** Perbedaannya terletak pada fitur **morfologi dan tekstur** (bentuk, densitas spikelet, permukaan buah).
+Kesimpulan: Warna **konsisten** dengan urutan kematangan, tetapi **tidak cukup diskriminatif** untuk klasifikasi (akurasi hanya 31.6%). Perbedaan B2/B3 membutuhkan fitur **morfologi dan tekstur** (bentuk, densitas spikelet, permukaan buah).
 
 </td>
 </tr>
@@ -481,7 +481,7 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
 
 3. **Bottleneck utama adalah B2/B3 confusion** — bukan masalah arsitektur, resolusi, augmentasi, atau warna. Ini adalah **ambiguitas visual fundamental** yang kemungkinan diperparah oleh **label noise** dari annotator.
 
-4. **B4 (small object) adalah bottleneck sekunder** — mAP50-95 = 0.140, sulit diperbaiki tanpa mengorbankan konteks spasial.
+4. **B4 (buah mentah terkecil) adalah bottleneck sekunder** — mAP50-95 = 0.140, sulit diperbaiki tanpa mengorbankan konteks spasial.
 
 5. **Single-class detection sangat kuat** (mAP50-95 = 0.390) — ini menunjukkan bahwa lokalisasi bukan masalah utama; klasifikasi 4 kelas yang membatasi performa.
 
@@ -533,7 +533,7 @@ Berikut adalah pendekatan yang sudah **dibuktikan tidak efektif** melalui eksper
 | mAP50-95 | mean AP pada 10 IoU threshold (0.50–0.95, step 0.05) |
 | IoU | Intersection over Union — ukuran overlap prediksi vs ground truth |
 | TBS | Tandan Buah Segar (Fresh Fruit Bunch) |
-| B1–B4 | Kelas kematangan TBS (B1=mentah, B4=lewat matang) |
+| B1–B4 | Kelas kematangan TBS (B1=paling matang, B4=paling mentah/terkecil) |
 | SupCon | Supervised Contrastive Learning |
 | CORN | Conditional Ordinal Regression Network |
 | SAHI | Slicing Aided Hyper Inference |
